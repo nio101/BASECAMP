@@ -21,3 +21,6 @@ socket_send.connect("tcp://127.0.0.1:5000")
 print("ZMQ connect: PUB on tcp://127.0.0.1:5000 (send)")
 print 'sending message...'
 socket_send.send("%s %s" % (topic, messagedata))
+
+# messagedata = msgpack.packb(m_dict)
+# socket_send.send("%s %s" % (zmq_reports_topic, messagedata))
