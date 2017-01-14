@@ -69,24 +69,34 @@ Topics:
 ## Services
 
 ### [rules for every service]
-Each service will be automatically started by supervisord (unless for windows OSes where the task scheduler will handle that).
-Logs and configurations are handled locally, and source code is managed using a single github basecamp project.
+Each service will be automatically started by **supervisord** (unless for windows OSes where the task scheduler will handle that).
+**Logs and configurations** are handled locally, and source code is managed using a single github basecamp project.
 
-Each machine should send an HTTP request to the pushover notification service stating that the machine has rebooted.
-Each service automatically (re)started by supervisord should also send a pushover notification using the same mechanism.
+Each machine should send a notification to the LogBook service stating that **the machine has rebooted**.
+Each service automatically (re)started by supervisord should also send a notification using the same mechanism.
 
 ### pushover_operator
-+ machine: bc-watch
++ purpose: send pushover notifications
++ machine: bc-watch, port:8080
 + interface: REST-like
-  + http://bc-watch.local/pushover_notification?type=info&text=TTS+service+restarted
-  + http://bc-watch.local/alive => OK
+  + http://bc-watch.local:8080/send_pushover_notification?text=héhé => OK
+  + http://bc-watch.local:8080/alive => OK
 
 ### TTS
-+ machine: bc-annex
++ purpose: generate wav from text message using TTS
++ machine: bc-annex, port:8080
 + interface: REST-like
-  + http://bc-annex.local/TTS?text=Hello%20my%20dear! => URL to wav
-    + text provided as unicode
-  + http://bc-annex.local/alive => OK
+  + http://bc-annex.local:8080/TTS?text=héhé => URL for wav file
+  + http://bc-annex.local:8080/alive => OK
+
+### LogBook
++ purpose: keep a trace of all minor events (major problems are notified in realtime using pushover/SMS) into a centralized log file.
++ machine: bc-hq, port:8080
++ interface: REST-like
+  + http://bc-hq.local:8080/write_to_LogBook/text=héhé => OK
+  + http://bc-hq.local:8080/get_LogBook => get the logfile as text
+    + using a rotating logfile with a low size, we are returning the current logfile through this request
+  + http://bc-hq.local:8080/alive => OK
 
 ### SMS_operator
 

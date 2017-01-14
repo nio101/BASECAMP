@@ -25,12 +25,13 @@ th_config = configparser.ConfigParser()
 th_config.read("pushover_operator.ini")
 logfile = th_config.get('main', 'logfile')
 hostname = th_config.get('main', 'hostname')
+port = th_config.getint('main', 'port')
 app_token = th_config.get('main', 'app_token')
 user_token = th_config.get('main', 'user_token')
 # also: getfloat, getint, getboolean
 
 # log
-log = logging.getLogger('basecamp_UI')
+log = logging.getLogger('pushover_operator')
 log.setLevel(logging.DEBUG)
 # create file handler
 fh = logging.handlers.RotatingFileHandler(
@@ -65,4 +66,4 @@ def do_TTS():
 # =======================================================
 # main loop
 
-run(host=hostname, port=80)
+run(host=hostname, port=port)
