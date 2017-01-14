@@ -4,3 +4,5 @@ requests
 httpie
 umsgpack
 zmq
+configparser
+gevent
