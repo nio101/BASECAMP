@@ -2,7 +2,7 @@
 # coding: utf-8
 
 """
-Basecamp web_server sample skeleton
+Basecamp logbook service
 
 (python2/python3 compatible)
 note:   webserver may not be multi-threaded/non-blocking.
@@ -14,7 +14,6 @@ from bottle import run, request, get
 import logging
 import logging.handlers
 import configparser
-import requests
 
 
 # =======================================================
@@ -22,28 +21,26 @@ import requests
 
 # .ini
 th_config = configparser.ConfigParser()
-th_config.read("web_server.ini")
+th_config.read("logbook.ini")
 logfile = th_config.get('main', 'logfile')
 hostname = th_config.get('main', 'hostname')
 port = th_config.getint('main', 'port')
-app_token = th_config.get('main', 'app_token')
-user_token = th_config.get('main', 'user_token')
 # also: getfloat, getint, getboolean
 
 # log
-log = logging.getLogger('web_server')
-log.setLevel(logging.DEBUG)
+log = logging.getLogger('logbook')
+log.setLevel(logging.INFO)
 # create file handler
 fh = logging.handlers.RotatingFileHandler(
               logfile, maxBytes=8000000, backupCount=5)
 fh.setLevel(logging.DEBUG)
 # create formatter and add it to the handlers
-formatter = logging.Formatter('%(asctime)s - [%(name)s] %(levelname)s: %(message)s')
+formatter = logging.Formatter('%(asctime)s: %(message)s')
 fh.setFormatter(formatter)
 # add the handlers to the logger
 log.addHandler(fh)
 
-log.warning("web_server is (re)starting !")
+log.warning("logbook service is (re)starting")
 
 # =======================================================
 # URL handlers
@@ -53,15 +50,29 @@ def do_alive():
     return "OK"
 
 
-@get('/web_server_request')
-def do_TTS():
+@get('/add_to_logbook')
+def do_add():
     uni_text = request.query.text
-    log.info("sending notification:%s"%uni_text)
-    r = requests.post('https://api.pushover.net/1/messages.json', data = {'token':app_token, 'user':user_token, 'message':uni_text})
-    if r.status_code==200 and r.json()["status"]==1:
-        return "OK"
-    else:
-        return "ERROR"
+    log.info("%s" % uni_text)
+    return "OK"
+
+
+@get('/get_logbook')
+def do_get():
+    res = "<meta charset=\"UTF-8\">"
+    res += "<meta http-equiv=\"refresh\" content=\"5\">\
+    <meta http-equiv=\"cache-control\" content=\"max-age=0\" />\
+    <meta http-equiv=\"cache-control\" content=\"no-cache\" />\
+    <meta http-equiv=\"expires\" content=\"0\" />\
+    <meta http-equiv=\"expires\" content=\"Tue, 01 Jan 1980 1:00:00 GMT\" />\
+    <meta http-equiv=\"pragma\" content=\"no-cache\" />"
+    res += "<html><h2>Basecamp Logbook:</h2><pre>"
+    with open(logfile) as f:
+        for line in f:
+            res += line
+    res += "</pre></html>"
+    return res
+
 
 # =======================================================
 # main loop

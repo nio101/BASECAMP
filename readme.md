@@ -77,24 +77,24 @@ Each service automatically (re)started by supervisord should also send a notific
 
 ### pushover_operator
 + purpose: send pushover notifications
-+ machine: bc-watch, port:8080
-+ interface: REST-like
++ machine: bc-watch
++ interface: HTTP, port:8080
   + http://bc-watch.local:8080/send_pushover_notification?text=héhé => OK
   + http://bc-watch.local:8080/alive => OK
 
 ### TTS
 + purpose: generate wav from text message using TTS
-+ machine: bc-annex, port:8080
-+ interface: REST-like
++ machine: bc-annex
++ interface: HTTP, port 8080
   + http://bc-annex.local:8080/TTS?text=héhé => URL for wav file
   + http://bc-annex.local:8080/alive => OK
 
-### LogBook
+### logbook
 + purpose: keep a trace of all minor events (major problems are notified in realtime using pushover/SMS) into a centralized log file.
-+ machine: bc-hq, port:8080
-+ interface: REST-like
-  + http://bc-hq.local:8080/write_to_LogBook/text=héhé => OK
-  + http://bc-hq.local:8080/get_LogBook => get the logfile as text
++ machine: bc-hq
++ interface: HTTP, port:8080
+  + http://bc-hq.local:8080/add_to_logbook?text=héhé => OK
+  + http://bc-hq.local:8080/get_logbook => get the logfile as text
     + using a rotating logfile with a low size, we are returning the current logfile through this request
   + http://bc-hq.local:8080/alive => OK
 

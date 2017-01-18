@@ -2,7 +2,7 @@
 bottle
 requests
 httpie
-umsgpack
-zmq
+# umsgpack
+# zmq
 configparser
-gevent
+# gevent
