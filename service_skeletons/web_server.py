@@ -19,19 +19,21 @@ import requests
 
 # =======================================================
 # init
+service_name = "web_server"
 
 # .ini
 th_config = configparser.ConfigParser()
-th_config.read("web_server.ini")
+th_config.read(service_name+".ini")
 logfile = th_config.get('main', 'logfile')
 hostname = th_config.get('main', 'hostname')
 port = th_config.getint('main', 'port')
 app_token = th_config.get('main', 'app_token')
 user_token = th_config.get('main', 'user_token')
+pushover_url = th_config.get('main', 'pushover_url')
 # also: getfloat, getint, getboolean
 
 # log
-log = logging.getLogger('web_server')
+log = logging.getLogger(service_name)
 log.setLevel(logging.DEBUG)
 # create file handler
 fh = logging.handlers.RotatingFileHandler(
@@ -43,7 +45,10 @@ fh.setFormatter(formatter)
 # add the handlers to the logger
 log.addHandler(fh)
 
-log.warning("web_server is (re)starting !")
+log.warning(service_name+" is (re)starting !")
+
+# send a restart info on pushover
+r = requests.get(pushover_url, params = {'text': "le service "+service_name+" a redémarré..."})
 
 # =======================================================
 # URL handlers

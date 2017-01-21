@@ -19,10 +19,11 @@ import requests
 
 # =======================================================
 # init
+service_name = "pushover_operator"
 
 # .ini
 th_config = configparser.ConfigParser()
-th_config.read("pushover_operator.ini")
+th_config.read(service_name+".ini")
 logfile = th_config.get('main', 'logfile')
 hostname = th_config.get('main', 'hostname')
 port = th_config.getint('main', 'port')
@@ -31,7 +32,7 @@ user_token = th_config.get('main', 'user_token')
 # also: getfloat, getint, getboolean
 
 # log
-log = logging.getLogger('pushover_operator')
+log = logging.getLogger(service_name)
 log.setLevel(logging.DEBUG)
 # create file handler
 fh = logging.handlers.RotatingFileHandler(
@@ -43,7 +44,10 @@ fh.setFormatter(formatter)
 # add the handlers to the logger
 log.addHandler(fh)
 
-log.warning("pushover_operator is (re)starting !")
+log.warning(service_name+" is (re)starting !")
+
+# send a restart info on pushover
+r = requests.post('https://api.pushover.net/1/messages.json', data = {'token':app_token, 'user':user_token, 'message':"le service "+service_name+" a redémarré..."})
 
 # =======================================================
 # URL handlers

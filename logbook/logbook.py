@@ -18,17 +18,19 @@ import configparser
 
 # =======================================================
 # init
+service_name = "logbook"
 
 # .ini
 th_config = configparser.ConfigParser()
-th_config.read("logbook.ini")
+th_config.read(service_name+".ini")
 logfile = th_config.get('main', 'logfile')
 hostname = th_config.get('main', 'hostname')
 port = th_config.getint('main', 'port')
+pushover_url = th_config.get('main', 'pushover_url')
 # also: getfloat, getint, getboolean
 
 # log
-log = logging.getLogger('logbook')
+log = logging.getLogger(service_name)
 log.setLevel(logging.INFO)
 # create file handler
 fh = logging.handlers.RotatingFileHandler(
@@ -40,10 +42,14 @@ fh.setFormatter(formatter)
 # add the handlers to the logger
 log.addHandler(fh)
 
-log.warning("logbook service is (re)starting")
+log.warning(service_name+" service is (re)starting")
+
+# send a restart info on pushover
+r = requests.get(pushover_url, params = {'text': "le service "+service_name+" a redémarré..."})
 
 # =======================================================
 # URL handlers
+
 
 @get('/alive')
 def do_alive():

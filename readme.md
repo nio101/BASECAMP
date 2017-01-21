@@ -14,6 +14,7 @@ Pour bc-watch, bc-hq et bc-annex:
 - [ ] développer le watchdog: tester le ping des machines, puis le PUB/SUB ZMQ, et ensuite faire un ping de chaque service, tester aussi influxdb et grafana (http). Ajouter le monitoring du secteur avec désactivation du watchdog quand le secteur est perdu & réactivation après tempo quand il revient. Notifications par SMS si problème secteur, par pushover si problème watchdog.
 - [ ] chauffage: mettre une alerte/info si confort pendant la nuit (oubli force_confort?) ou mettre durée d'application du force_confort!
 - [ ] tester snowboy & la reconnaissance de hotword/word hotspotting
+- [ ] mettre url_pushover & pushover restart notif sur TTS
 
 ## Machines
 Many services are set on many machines. Interactions between them are done using time-series database (influxdb), and/or a ZMQ pub/sub messaging facility.
@@ -103,6 +104,8 @@ Each service automatically (re)started by supervisord should also send a notific
 ### watchdog
 
 ### presence
+
+### reception
 
 ## cam2cam
 
