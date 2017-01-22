@@ -56,8 +56,6 @@ ZMQ PUB/SUB topics are used to filter messages.
 
 Topics:
 * bc.muta(.order/.update)
-* 
-
 * basecamp.interphone.client (play message requests from interphone server)
 * basecamp.interphone.server (annoucement requests from other modules)
 * basecamp.operator (orders sent to field units)
@@ -85,10 +83,10 @@ Each service automatically (re)started by supervisord should also send a notific
 
 ### TTS
 + purpose: generate wav from text message using TTS
-+ machine: bc-annex
++ machine: bc-annex.local (192.168.1.55)
 + interface: HTTP, port 8080
-  + http://bc-annex.local:8080/TTS?text=héhé => URL for wav file
-  + http://bc-annex.local:8080/alive => OK
+  + http://192.168.1.55:8080/TTS?text=héhé => URL for wav file
+  + http://192.168.1.55:8080/alive => OK
 
 ### logbook
 + purpose: keep a trace of all minor events (major problems are notified in realtime using pushover/SMS) into a centralized log file.
@@ -100,12 +98,32 @@ Each service automatically (re)started by supervisord should also send a notific
   + http://bc-hq.local:8080/alive => OK
 
 ### SMS_operator
++ purpose: send SMS notifications + receive SMS from outside
++ machine: bc-watch
++ interface: HTTP, port:8081
+  + http://bc-watch.local:8080/send_SMS?text=héhé => OK
+  + http://bc-watch.local:8080/alive => OK
++ if an incoming SMS is detected, its content is broadcasted on Basecamp's PUB ZMQ channel with the topic _basecamp.SMS.incoming_
+
+### veilleuse
++ purpose: turn ON/OFF some night lights based on the outdoor light level, as measured by MUTA scout units
++ machine: bc-presence
++ when the outdoor light level rises/falls above/under a light threshold, a latching relay is activated to turn OFF/ON night lights.
+
+### power_monitoring
+
+### internet monitoring
 
 ### watchdog
 
 ### presence
 
-### reception
+### interphone
++ purpose: makes TTS anouncements based on presence events or on demand of other services. Future versions will use hotword detection (snowboy) and lightbox.
++ machine: bc-ui.local (i.e. _basecamp-hq.local_ right now)
++ interface: ZMQ SUB
+  + topic: basecamp.interphone.announce params: [unicode_text]
++ every 1/4 of hour, the time will be announced too, according to time and presence status.
 
 ## cam2cam
 
