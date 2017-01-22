@@ -16,6 +16,8 @@ import umsgpack
 import zmq
 import time
 import os
+from subprocess import call
+import datetime
 
 
 # =======================================================
@@ -109,7 +111,23 @@ while should_continue is True:
             # download wav file
             local_wav = download_file(wav_url)
             # play wav file
+            # volume = 70
+            # call(["amixer", "-D", "pulse", "sset", "Master", str(volume)+"%"])
+            now = datetime.datetime.now()
+            if (now.hour < 7) or (now.hour > 23):
+                vol1 = "15%"
+                vol2 = "25%"
+            else:
+                vol1 = "40%"
+                vol2 = "60%"            
+            call(["amixer", "-D", "pulse", "sset", "Master", vol1])
+            os.system("aplay codeccall.wav")
+            time.sleep(0.2)
+            call(["amixer", "-D", "pulse", "sset", "Master", vol2])
             os.system("aplay "+local_wav)
+            time.sleep(0.2)
+            call(["amixer", "-D", "pulse", "sset", "Master", vol1])
+            os.system("aplay exit.wav")
             # remove the file
             os.remove(local_wav)
         else:
