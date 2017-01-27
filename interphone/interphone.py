@@ -50,14 +50,14 @@ log.warning(service_name+" is (re)starting !")
 context = zmq.Context()
 # muta PUB channel
 socket_pub = context.socket(zmq.PUB)
-socket_pub.connect("tcp://bc-hq.local:5000")
-log.info("ZMQ connect: PUB on tcp://bc-hq.local:5000")
+socket_pub.connect("tcp://192.168.1.50:5000")
+log.info("ZMQ connect: PUB on tcp://192.168.1.50:5000")
 # muta SUB channel
 socket_sub = context.socket(zmq.SUB)
-socket_sub.connect("tcp://bc-hq.local:5001")
+socket_sub.connect("tcp://192.168.1.50:5001")
 topicfilter = "basecamp.interphone.announce"
 socket_sub.setsockopt(zmq.SUBSCRIBE, topicfilter)
-log.debug("ZMQ connect: SUB on tcp://bc-hq.local:5001")
+log.debug("ZMQ connect: SUB on tcp://192.168.1.50:5001")
 # give ZMQ some time to setup the channels
 time.sleep(1)
 poller = zmq.Poller()
@@ -110,6 +110,7 @@ while should_continue is True:
             print(wav_url)
             # download wav file
             local_wav = download_file(wav_url)
+            call(["sox", local_wav, "announce_plus_contrast.wav", "contrast"])
             # play wav file
             # volume = 70
             # call(["amixer", "-D", "pulse", "sset", "Master", str(volume)+"%"])
@@ -124,7 +125,7 @@ while should_continue is True:
             os.system("aplay codeccall.wav")
             time.sleep(0.2)
             call(["amixer", "-D", "pulse", "sset", "Master", vol2])
-            os.system("aplay "+local_wav)
+            os.system("aplay announce_plus_contrast.wav")
             time.sleep(0.2)
             call(["amixer", "-D", "pulse", "sset", "Master", vol1])
             os.system("aplay exit.wav")

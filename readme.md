@@ -15,23 +15,41 @@ Pour bc-watch, bc-hq et bc-annex:
 - [ ] chauffage: mettre une alerte/info si confort pendant la nuit (oubli force_confort?) ou mettre durée d'application du force_confort!
 - [ ] tester snowboy & la reconnaissance de hotword/word hotspotting
 - [ ] mettre url_pushover & pushover restart notif sur TTS
+- [ ] bug: veilleuse exits if cannot request influxdb => should raise alarm in logbook, but go on
 
 ## Machines
 Many services are set on many machines. Interactions between them are done using time-series database (influxdb), and/or a ZMQ pub/sub messaging facility.
 
 * `bc-ui` (Xubuntu on an old Intel NUC, remote desktop/Nomachine & ssh nio@bc-hq.local, TO BE INSTALLED) is the main basecamp UI, to interact with guests. A 24" touch-enabled LCD is used to browse the web server UI (using _firefox_ in fullscreen), a loudspeaker is used to make announcements (using the **interphone** service), and a **lightpack** USB module is used to bring a visual feedback, if needed. Located in the main room, it is powered by an old **Intel NUC**, under **Xubuntu**.
+  * bonjour: bc-ui.local, basecamp.local (old)
+  * fixed IP: 192.168.1.52 
 
 * `bc-hq` (Xubuntu on recent Intel NUC, remote desktop/Nomachine & ssh nio@bc-hq.local, UP) is the main backend. It's hosting the time-series database **influxdb** and it's graphing module **graphana**, the main UI web server powered by **bottle**, and the interface to the wireless field units via the USB connected **operator** unit. It is powered by a recent **Intel NUC**, under **Xubuntu**.
+  * bonjour: bc-hq.local
+  * fixed IP: 192.168.1.50
 
 * `bc-annex` (win7 on old Atom, remote desktop/Nomachine bc-watch.local, UP) mainly hosts the windows-based SAPI5 synthesis, and the **interphone** server module. It also host some periodical scraping / transcoding tasks (video feeds), and some scraping about the weather forecast. It is powered by an old **Atom** motherboard, under **windows 7**.
+  * bonjour: bc-annex.local
+  * fixed IP: 192.168.1.55
+
 
 * `bc-watch` (Debian Jessi on CHIP, ssh chip@bc-watch.local, UP) is the watchdog module, EPS backed, able to detect any power outage, and equipped with an USB 3G/4G modem to sens/receive SMS. It's also in charge of configuring the router's port forwarding via UPnP to temporarily allow external access to the basecamp UI, of monitoring presence, and of handling pushover notifications in parallel of SMS dialogs. It is powered by a headless C.H.I.P., with a powered hub (required for powering the USB modem), and an USB ethernet adapter (_because I use wifi only if I can't use ethernet_).
+  * bonjour: bc-watch.local
+  * fixed IP: 192.168.1.54
 
 * `bc-presence` (Debian Jessi on CHIP, ssh chip@bc-presence.local, UP) is the presence module, located near the bc-ui unit, that will:
   + detect any nearby presence using PIR sensors, and then wake up the bc-ui from screensaver, to let the user see the dashboard slideshow/clock (+ update the presence if required, or set an alarm if _lockout_ state)
   + monitor the outdoor luminosity to turn on/off the night led lights in the living room
   + scan regularly via bluetooth to check if the Galaxy A5 is detected nearby, and set the presence variable accordingly (disable _lockout_, greets & report)
-
+    * bonjour: bc-presence.local
+    * fixed IP: 192.168.1.53
+  
+  * `bc-power` (Debian Jessi on CHIP, ssh chip@bc-power.local, UP) is the module located near the house heater and main power metering unit, that will:
+  + control the heater command (via a latching relay)
+  + receive the main power monitoring info provided by the main power metering unit (via the UART interface)
+    * bonjour: bc-power.local
+    * fixed IP: 192.168.1.51
+  
 **supervisord** is used to monitor/start/stop modules on each machine.
 <br>**Bonjour/avahi** is used on machine to allow easy access using the **_\<hostname>.local_** syntax.
 
@@ -87,6 +105,9 @@ Each service automatically (re)started by supervisord should also send a notific
 + interface: HTTP, port 8080
   + http://192.168.1.55:8080/TTS?text=héhé => URL for wav file
   + http://192.168.1.55:8080/alive => OK
++ TODO:
+  + sox in out contrast
+  + sox 
 
 ### logbook
 + purpose: keep a trace of all minor events (major problems are notified in realtime using pushover/SMS) into a centralized log file.
@@ -110,9 +131,25 @@ Each service automatically (re)started by supervisord should also send a notific
 + machine: bc-presence
 + when the outdoor light level rises/falls above/under a light threshold, a latching relay is activated to turn OFF/ON night lights.
 
+### heater
++ purpose: monitors temperature, and depending on heating profiles, commands the heater latching relay to start/stop heating
++ interface: ZMQ SUB
+  + topic: basecamp.heater
+  + basecamp.heater.profile params:profile_name (from a static list of choices)
++ monitors basecamp.muta.update events to get fresh information about selected temperature sensors
++ reads profiles list from configuration
++ reads locally heating schedules for certain profiles
++ turn on/off latching relay when needed
++ has failsafe procedure if temperature has not been updated for a long time, while the heater is turned on => turn it off to be safe
++ exports regularly (every hour + at every modification) variables to influxdb for recording the active heating profile + the current  goal temperature + the latching relay state (0/1)
++ machine: bc-hq
+
 ### power_monitoring
++ purpose: monitors the main power supply and send an alert by SMS when there's a power shortage
++ 
 
 ### internet monitoring
+purpose: monitors the internet access availability, and send a pushover notification when it is not available
 
 ### watchdog
 

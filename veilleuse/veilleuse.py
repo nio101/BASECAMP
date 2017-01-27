@@ -8,6 +8,8 @@ import logging
 import logging.handlers
 import configparser
 import requests
+import umsgpack
+import zmq
 
 
 # =======================================================
@@ -38,6 +40,12 @@ fh.setFormatter(formatter)
 log.addHandler(fh)
 
 log.warning(service_name+" is (re)starting !")
+
+# ZMQ init
+context = zmq.Context()
+# muta PUB channel
+socket_pub = context.socket(zmq.PUB)
+socket_pub.connect("tcp://192.168.1.50:5000")
 
 # brings an error! :(
 # GPIO.cleanup()
@@ -80,6 +88,8 @@ while True:
         else:
             log.info("lights are OFF")
             r = requests.get(pushover_url, params={'text': "le service "+service_name+" a éteint la veilleuse"})
+            data = umsgpack.packb([u"veilleuse", u"Le jour est levé, j'ai éteind la veilleuse."])
+            socket_pub.send("%s %s" % ("basecamp.interphone.announce", data))
             current_state = 0
     elif (current_state == 0) and (light_value < thresh_low):
         # lights should be ON
@@ -91,6 +101,8 @@ while True:
         if GPIO.input(probe):
             log.info("lights are ON")
             r = requests.get(pushover_url, params={'text': "le service "+service_name+" a allumé la veilleuse"})
+            data = umsgpack.packb([u"veilleuse", u"La nuit est tombée, j'ai allumé la veilleuse."])
+            socket_pub.send("%s %s" % ("basecamp.interphone.announce", data))
             current_state = 1
         else:
             log.error("lights are OFF, but they shouldn't be!")
