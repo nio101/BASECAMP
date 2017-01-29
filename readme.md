@@ -96,8 +96,8 @@ Each service automatically (re)started by supervisord should also send a notific
 + purpose: send pushover notifications
 + machine: bc-watch
 + interface: HTTP, port:8080
-  + http://bc-watch.local:8080/send_pushover_notification?text=héhé => OK
-  + http://bc-watch.local:8080/alive => OK
+  + http://192.168.1.54:8080/send_pushover_notification?text=héhé => OK
+  + http://192.168.1.54:8080/alive => OK
 
 ### TTS
 + purpose: generate wav from text message using TTS
@@ -111,19 +111,19 @@ Each service automatically (re)started by supervisord should also send a notific
 
 ### logbook
 + purpose: keep a trace of all minor events (major problems are notified in realtime using pushover/SMS) into a centralized log file.
-+ machine: bc-hq
-+ interface: HTTP, port:8080
-  + http://bc-hq.local:8080/add_to_logbook?text=héhé => OK
-  + http://bc-hq.local:8080/get_logbook => get the logfile as text
++ machine: bc-watch
++ interface: HTTP, port:8082
+  + http://192.168.1.54:8082/add_to_logbook?text=héhé => OK
+  + http://192.168.1.54:8082/get_logbook => get the logfile as text
     + using a rotating logfile with a low size, we are returning the current logfile through this request
-  + http://bc-hq.local:8080/alive => OK
+  + http://192.168.1.54:8082/alive => OK
 
 ### SMS_operator
 + purpose: send SMS notifications + receive SMS from outside
 + machine: bc-watch
 + interface: HTTP, port:8081
-  + http://bc-watch.local:8080/send_SMS?text=héhé => OK
-  + http://bc-watch.local:8080/alive => OK
+  + http://192.168.1.54:8080/send_SMS?text=héhé => OK
+  + http://192.168.1.54:8080/alive => OK
 + if an incoming SMS is detected, its content is broadcasted on Basecamp's PUB ZMQ channel with the topic _basecamp.SMS.incoming_
 
 ### veilleuse
@@ -134,15 +134,18 @@ Each service automatically (re)started by supervisord should also send a notific
 ### heater
 + purpose: monitors temperature, and depending on heating profiles, commands the heater latching relay to start/stop heating
 + interface: ZMQ SUB
-  + topic: basecamp.heater
-  + basecamp.heater.profile params:profile_name (from a static list of choices)
-+ monitors basecamp.muta.update events to get fresh information about selected temperature sensors
+  + topic: basecamp.muta.update
+  + monitors basecamp.muta.update events to get fresh information about selected temperature sensors
++ interface: HTTP, port:8080
+  + http://192.168.1.51:8080/alive
+  + http://192.168.1.51:8080/status
+  + http://192.168.1.51:8080/set_profile?profile=force_eco
 + reads profiles list from configuration
 + reads locally heating schedules for certain profiles
 + turn on/off latching relay when needed
 + has failsafe procedure if temperature has not been updated for a long time, while the heater is turned on => turn it off to be safe
-+ exports regularly (every hour + at every modification) variables to influxdb for recording the active heating profile + the current  goal temperature + the latching relay state (0/1)
-+ machine: bc-hq
++ exports regularly (+at every modification) variables to influxdb for recording the goal temperature + the latching relay state (0/1)
++ machine: bc-power
 
 ### power_monitoring
 + purpose: monitors the main power supply and send an alert by SMS when there's a power shortage

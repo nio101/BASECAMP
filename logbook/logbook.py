@@ -26,7 +26,6 @@ th_config.read(service_name+".ini")
 logfile = th_config.get('main', 'logfile')
 hostname = th_config.get('main', 'hostname')
 port = th_config.getint('main', 'port')
-pushover_url = th_config.get('main', 'pushover_url')
 # also: getfloat, getint, getboolean
 
 # log
@@ -43,9 +42,6 @@ fh.setFormatter(formatter)
 log.addHandler(fh)
 
 log.warning(service_name+" service is (re)starting")
-
-# send a restart info on pushover
-r = requests.get(pushover_url, params = {'text': "le service "+service_name+" a redémarré..."})
 
 # =======================================================
 # URL handlers
