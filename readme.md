@@ -4,18 +4,15 @@
 ## Todo
 
 Pour bc-watch, bc-hq et bc-annex:
-- [x] adresses IP fixes
-- [x] bc-annex: service "bc_TTS", avec API REST basique: texte unicode -> fichier wav téléchargeable en HTTP, reboot-proof, avec purge des wav régulièrement (schéma nommage avec TS) et une page "alive"
-- [ ] bc-hq: service "zmq_forwarder" qui crée les forwarder pour pub/sub UPDATES & ORDERS, reboot-proof via supervisord.- [ ] Sur chaque machine, mettre les logs (quand il y en a) dans /var/log/basecamp.log (tournants). Installer supervisord, et lancer run_fw d'abord (en root), puis operator (en nio), avec un décalage dans le temps (attendre 5 sec par exemple).
-- [ ] bc-ui: service "speaker" qui va surveiller ORDERS pour demander à la demande un wav à bc_TTS et le jouer sur l'UI pour faire une annonce
-- [ ] bc-ui: service "time_announce" qui va annoncer les heures en TTS en utilisant speaker
-- [ ] bc-hq: deplacer operator.py & dependances & le cabler sur le nouveau "zmq_forwarder".
-- [ ] presence: installer bc-concierge avec le service "concierge" qui va gérer la présence et faire des annonces et fonction des évènements
-- [ ] développer le watchdog: tester le ping des machines, puis le PUB/SUB ZMQ, et ensuite faire un ping de chaque service, tester aussi influxdb et grafana (http). Ajouter le monitoring du secteur avec désactivation du watchdog quand le secteur est perdu & réactivation après tempo quand il revient. Notifications par SMS si problème secteur, par pushover si problème watchdog.
+- [ ] Ajouter le monitoring du secteur avec désactivation du watchdog quand le secteur est perdu & réactivation après tempo quand il revient. Notifications par SMS si problème secteur, par pushover si problème watchdog (mais limiter le nombre de message pour ne pas flooder / boucles)
+- [ ] cabler la télé-info & lire UART + produire métrique(s) liées à la conso électrique + envisager de remonter automatiquement la consommation en utilisant python/scheduler
 - [ ] chauffage: mettre une alerte/info si confort pendant la nuit (oubli force_confort?) ou mettre durée d'application du force_confort!
+- [ ] voire comment organiser la reco vocale + lightbox / présence (reprendre notes)
 - [ ] tester snowboy & la reconnaissance de hotword/word hotspotting
-- [ ] mettre url_pushover & pushover restart notif sur TTS
+- [ ] coupler avec la lightbox, qui devra être installée derrière l'écran
 - [ ] bug: veilleuse exits if cannot request influxdb => should raise alarm in logbook, but go on
+- [ ] chip ethernet adapter bug workaround watchdog: le développer et le déployer pour les chip en ethernet
+- [ ] watchdog => implement a watchod service testing that regularly pings every machine+service using ping/http-alive/zmq-alive, alert if any problem, offers detailed results via HTTP + logbook agreggation.
 
 ## Machines
 Many services are set on many machines. Interactions between them are done using time-series database (influxdb), and/or a ZMQ pub/sub messaging facility.
@@ -44,14 +41,14 @@ Many services are set on many machines. Interactions between them are done using
     * bonjour: bc-presence.local
     * fixed IP: 192.168.1.53
   
-  * `bc-power` (Debian Jessi on CHIP, ssh chip@bc-power.local, UP) is the module located near the house heater and main power metering unit, that will:
-  + control the heater command (via a latching relay)
-  + receive the main power monitoring info provided by the main power metering unit (via the UART interface)
-    * bonjour: bc-power.local
-    * fixed IP: 192.168.1.51
+* `bc-power` (Raspbian on RPi1, ssh nio@bc-power.local, UP) is the module located near the house heater and main power metering unit, that will:
+   + control the heater command (via a latching relay)
+   + receive the main power monitoring info provided by the main power metering unit (via the UART interface)
+     * bonjour: bc-power.local
+     * fixed IP: 192.168.1.51
   
 **supervisord** is used to monitor/start/stop modules on each machine.
-<br>**Bonjour/avahi** is used on machine to allow easy access using the **_\<hostname>.local_** syntax.
+<br>**Bonjour/avahi** is used on machine to allow easy access using the **_\<hostname>.local_** syntax (_only to ease development, not to be used in production/resolution is very slow sometimes through python HTTP modules, use static IPs in that case_).
 
 **Xubuntu** and **Windows 7** machines can be remotely accessed on the LAN using **NoMachine**'s protocol and client/server.
 
@@ -61,7 +58,7 @@ A single PUB/SUB messaging pattern is used for exchanging:
 * orders, requests, actions that needs to be performed
 * answers, reports, information or events
 
-Only information and commands that could/should be shared among multiple services are passing through this communication mechanism.
+Only information and commands that should be shared among multiple services are passing through this communication mechanism.
 Other peer2peer-like commands would be done using basic REST commands, that are easier to implement/debug.
 
 Each basecamp module can then PUB/SUB on any topic, to send/receive orders, or events across the machines/network.
@@ -91,6 +88,11 @@ Each service will be automatically started by **supervisord** (unless for window
 
 Each machine should send a notification to the LogBook service stating that **the machine has rebooted**.
 Each service automatically (re)started by supervisord should also send a notification using the same mechanism.
+
+### chip ethernet adapter bug workaround watchdog
+Sometimes the kernel will loose eth0, with a `r8152 1-1:1.0 eth0: Tx timeout` entry in `/var/log/kernel.log`...
+The idea is to have a python watchdog script that reboots the CHIP machine is that happens...
+tip: use https://pypi.python.org/pypi/tailer/
 
 ### pushover_operator
 + purpose: send pushover notifications
