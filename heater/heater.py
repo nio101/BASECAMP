@@ -190,7 +190,7 @@ def check_temp_update():
                 # switch using GPIO + check with probe
                 log.info("resetting the heater relay")
                 GPIO.output(reset, 1)
-                sleep(0.02)
+                time.sleep(0.02)
                 GPIO.output(reset, 0)
                 if GPIO.input(probe):
                     log.info("relay probe is HIGH")
@@ -212,7 +212,7 @@ def check_temp_update():
                 # switch using GPIO + check with probe
                 log.info("setting the heater relay")
                 GPIO.output(set, 1)
-                sleep(0.02)
+                time.sleep(0.02)
                 GPIO.output(set, 0)
                 if GPIO.input(probe):
                     log.info("heater latching relay is ON")
@@ -390,7 +390,7 @@ GPIO.setup(reset, GPIO.OUT, initial=GPIO.LOW)
 # check with probe
 log.info("resetting the heater relay")
 GPIO.output(reset, 1)
-sleep(0.02)
+time.sleep(0.02)
 GPIO.output(reset, 0)
 if GPIO.input(probe):
     log.info("relay probe is HIGH")
