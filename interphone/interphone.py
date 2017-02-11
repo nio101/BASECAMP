@@ -126,7 +126,7 @@ while should_continue is True:
             time.sleep(0.2)
             call(["amixer", "-D", "pulse", "sset", "Master", vol2])
             os.system("aplay announce_plus_contrast.wav")
-            time.sleep(0.2)
+            # time.sleep(0.2)
             call(["amixer", "-D", "pulse", "sset", "Master", vol1])
             os.system("aplay exit.wav")
             # remove the file

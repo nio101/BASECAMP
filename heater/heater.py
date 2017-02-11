@@ -50,7 +50,7 @@ def read_profile_settings(name):
     delta_temp_minus = float(th_config.get("thermostat", "delta_temp_minus"))
     calendrier = eval(th_config.get("thermostat", "calendrier"))
     log.info("loading profile '"+profile+"'")
-    requests.get(logbook_url, params={'text': service_name+" - profil de chauffage:"+name})
+    # requests.get(logbook_url, params={'text': service_name+" - profil de chauffage:"+name})
 
 
 def save_new_profile_to_ini():
@@ -150,7 +150,7 @@ def check_temp_update():
             if (is_calendar_on_eco(calendrier)):
                 if (th_mode == ThMode.COMFORT):
                     log.info("switching to ECO mode")
-                    requests.get(logbook_url, params={'text': service_name+" - passage en mode ECO"})
+                    # requests.get(logbook_url, params={'text': service_name+" - passage en mode ECO"})
                     th_mode = ThMode.ECO
                     # log.debug("sending (ORDERS): basecamp_HQ_heater_info, {'mode':'ECO'}")
                     # msg = msgpack.packb(["basecamp_HQ_heater_info","{'mode':'ECO'}"])
@@ -159,7 +159,7 @@ def check_temp_update():
             else:
                 if (th_mode == ThMode.ECO):
                     log.info("switching to COMFORT mode")
-                    requests.get(logbook_url, params={'text': service_name+" - passage en mode CONFORT"})
+                    # requests.get(logbook_url, params={'text': service_name+" - passage en mode CONFORT"})
                     th_mode = ThMode.COMFORT
                     # log.debug("sending (ORDERS): basecamp_HQ_heater_info, {'mode':'COMFORT'}")
                     # msg = msgpack.packb(["basecamp_HQ_heater_info","{'mode':'COMFORT'}"])
@@ -180,7 +180,7 @@ def check_temp_update():
             if (float(temp_in) >= (aimed_temp+float(delta_temp_plus)) and (relay_out == 1)):
                 # stop the heater
                 log.info("therm: %.2f reached (%.2f max, %.2f aimed), stopping the heater" % (float(temp_in), (aimed_temp+float(delta_temp_plus)), float(aimed_temp)))
-                requests.get(logbook_url, params={'text': service_name+" - arrêt du chauffage"})
+                # requests.get(logbook_url, params={'text': service_name+" - arrêt du chauffage"})
                 # TODO: switch using GPIO + check with probe
                 # send alarm if probe not ok
                 relay_out = 0
@@ -191,7 +191,7 @@ def check_temp_update():
             elif ((float(temp_in) <= (aimed_temp-float(delta_temp_minus))) and (relay_out == 0)):
                 # start the heater
                 log.info("therm: %.2f reached (%.2f min, %.2f aimed), starting the heater" % (float(temp_in), (float(aimed_temp)-float(delta_temp_minus)), float(aimed_temp)))
-                requests.get(logbook_url, params={'text': service_name+" - démarrage du chauffage"})
+                # requests.get(logbook_url, params={'text': service_name+" - démarrage du chauffage"})
                 # TODO: switch using GPIO + check with probe
                 # send alarm if probe not ok
                 relay_out = 1
@@ -288,7 +288,7 @@ log.addHandler(fh)
 
 log.warning(service_name+" is (re)starting !")
 # send a restart info to logbook
-requests.get(logbook_url, params={'text': service_name+" - redémarre..."})
+requests.get(logbook_url, params={'text': "le service "+service_name+" - redémarre..."})
 
 # influxdb init
 client = InfluxDBClient(influxdb_host, influxdb_port)

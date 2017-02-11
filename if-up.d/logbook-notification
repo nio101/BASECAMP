@@ -1,0 +1,24 @@
+#!/bin/sh
+
+# Thanks to Celada for this script/idea:
+# from http://unix.stackexchange.com/questions/166473/debian-how-to-run-a-script-on-startup-as-soon-as-there-is-an-internet-connecti
+
+FLAGFILE=/var/run/work-was-already-done
+
+case "$IFACE" in
+    eth0)
+	if [ -e $FLAGFILE ]; then
+	    exit 0
+	else
+	    touch $FLAGFILE
+	fi
+
+	# here, do the real work.
+	# requires httpie
+	/usr/local/bin/http GET 192.168.1.54:8082/add_to_logbook text=="la machine XYZ a redémarré."
+    ;;
+
+    *)
+	;;
+esac
+
