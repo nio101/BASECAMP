@@ -23,6 +23,12 @@ import glob
 import os
 from influxdb import InfluxDBClient
 
+try:
+    import RPi.GPIO as GPIO
+except RuntimeError:
+    print("Error importing RPi.GPIO!  This is probably because you need superuser privileges.  You can achieve this by using 'sudo' to run your script")
+    exit(1)
+
 
 # =======================================================
 
@@ -181,7 +187,18 @@ def check_temp_update():
                 # stop the heater
                 log.info("therm: %.2f reached (%.2f max, %.2f aimed), stopping the heater" % (float(temp_in), (aimed_temp+float(delta_temp_plus)), float(aimed_temp)))
                 # requests.get(logbook_url, params={'text': service_name+" - arrêt du chauffage"})
-                # TODO: switch using GPIO + check with probe
+                # switch using GPIO + check with probe
+                log.info("resetting the heater relay")
+                GPIO.output(reset, 1)
+                sleep(0.02)
+                GPIO.output(reset, 0)
+                if GPIO.input(probe):
+                    log.info("relay probe is HIGH")
+                    # alarm if probe is not LOW
+                    log.error("unable to reset heater relay, stopping here")
+                    exit(1)
+                else:
+                    log.info("heater latching relay is OFF")
                 # send alarm if probe not ok
                 relay_out = 0
                 need_influxdb_update = True
@@ -192,7 +209,18 @@ def check_temp_update():
                 # start the heater
                 log.info("therm: %.2f reached (%.2f min, %.2f aimed), starting the heater" % (float(temp_in), (float(aimed_temp)-float(delta_temp_minus)), float(aimed_temp)))
                 # requests.get(logbook_url, params={'text': service_name+" - démarrage du chauffage"})
-                # TODO: switch using GPIO + check with probe
+                # switch using GPIO + check with probe
+                log.info("setting the heater relay")
+                GPIO.output(set, 1)
+                sleep(0.02)
+                GPIO.output(set, 0)
+                if GPIO.input(probe):
+                    log.info("heater latching relay is ON")
+                else:
+                    log.info("relay probe is LOW")
+                    # alarm if probe is not HIGH
+                    log.error("unable to set heater relay, stopping here")
+                    exit(1)
                 # send alarm if probe not ok
                 relay_out = 1
                 need_influxdb_update = True
@@ -347,13 +375,32 @@ for file in glob.glob("*.ini"):
     profile_list.append(file[:-4])
 os.chdir("..")
 
-# TODO: GPIO init
+# GPIO init
+GPIO.setmode(GPIO.BOARD)
+
+# probe: pin #15, GPIO22
+# set/reset: pins #16/18, GPIO 24/23
+probe = 15
+set = 16
+reset = 18
+GPIO.setup(probe, GPIO.IN)
+GPIO.setup(set, GPIO.OUT, initial=GPIO.LOW)
+GPIO.setup(reset, GPIO.OUT, initial=GPIO.LOW)
 # shut down the heater,
-# check with probe,
-# & set relay_out to 0!
-# TODO: alarm if probe is not 0
+# check with probe
+log.info("resetting the heater relay")
+GPIO.output(reset, 1)
+sleep(0.02)
+GPIO.output(reset, 0)
+if GPIO.input(probe):
+    log.info("relay probe is HIGH")
+    # alarm if probe is not 0
+    log.error("unable to reset heater relay, stopping here")
+    exit(1)
+else:
+    log.info("relay probe is LOW")
+    log.info("heater latching relay is OFF")
 relay_out = 0
-log.info("heater latching relay is OFF")
 
 # ZMQ init
 context = zmq.Context()
