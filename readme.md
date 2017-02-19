@@ -3,8 +3,8 @@
 ## Todo
 
 Pour bc-watch, bc-hq et bc-annex:
+- [ ] modif logbook + service_name & machine_name auto pour chaque service + revoir restart+events+errors -> log+logbook. Done: power, heater
 - [ ] Ajouter le monitoring du secteur avec désactivation du watchdog quand le secteur est perdu & réactivation après tempo quand il revient. Notifications par SMS si problème secteur, par pushover si problème watchdog (mais limiter le nombre de message pour ne pas flooder / boucles)
-- [ ] activer la gestion du chauffage via bc-power, avec heater.py en utilisant le relay bistable et plus la solution openzwave
 - [ ] envisager de remonter automatiquement la consommation en utilisant python/scheduler
 - [ ] chauffage: mettre une alerte/info si confort pendant la nuit (oubli force_confort?) ou mettre durée d'application du force_confort!
 - [x] voir comment organiser la reco vocale + lightbox / présence (reprendre notes)
@@ -17,9 +17,9 @@ Pour bc-watch, bc-hq et bc-annex:
 - [ ] mettre au carré les logs dans le logbook - exemple: machine X, service Y, dire quel service sur quelle machine, etç...
 - [ ] installer GIT sur chaque machine & descendre le repo BASECAMP pour mettre à jour facilement les scripts locaux
 - [ ] bug: si perte secteur (plus d'ethernet ni internet) et que secteur revient => bc-watch n'est plus accessible par réseau!?!
-- [ ] todo: quand heater et power n'arrivent pas à joindre influxdb, erreur, mais les scripts continuent dans le vide => écrire erreur dans log + exit(1) => restart par supervisord
 - [ ] REFACTORING DES SERVICES:
-  - [ ] quand une action foire, écrire dans le log, notifier logbook (au moins essayer), et quitter avec un code d'erreur pour que supervisor relance
+  - [ ] quand une action ESSENTIELLE foire, écrire dans le log, notifier logbook (au moins essayer), et quitter avec un code d'erreur pour que supervisor relance?
+  - [ ] si action PAS ESSENTIELLE, on peut continuer après écriture log+logbook
   - [ ] @start: info logbook
 - [ ] améliorer monitoring: sur l'UI, avoir une interface vers les logs applicatifs de n'importe quel service, en plus des infos données par le _watchdog-master_. + prévoir des infos d'espace disque de chaque machine (df -h avec % important) => watchdog avec notif
 

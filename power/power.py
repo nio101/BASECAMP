@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # coding: utf-8
 
 """
@@ -23,6 +23,7 @@ from influxdb import InfluxDBClient
 import serial
 import re
 import sys
+import socket
 
 
 # =======================================================
@@ -66,7 +67,8 @@ def export_metrics():
 
 # =======================================================
 # init
-service_name = "power"
+service_name = re.search("([^\/]*)\.py", sys.argv[0]).group(1)
+machine_name = socket.gethostname()
 
 # .ini
 th_config = configparser.ConfigParser()
@@ -92,7 +94,7 @@ log.addHandler(fh)
 
 log.warning(service_name+" is (re)starting !")
 # send a restart info to logbook
-requests.get(logbook_url, params={'text': service_name+" - redémarre..."})
+requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "redémarrage"})
 
 # influxdb init
 client = InfluxDBClient(influxdb_host, influxdb_port)

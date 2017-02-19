@@ -42,7 +42,7 @@ fh.setFormatter(formatter)
 log.addHandler(fh)
 
 # add its own restart info
-log.warning("[%s] [%s] :  redémarrage" % ("bc-watch", service_name))
+log.warning("[%s] [%s] : redémarrage" % ("bc-watch", service_name))
 
 # =======================================================
 # URL handlers

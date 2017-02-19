@@ -29,6 +29,7 @@ hostname = th_config.get('main', 'hostname')
 port = th_config.getint('main', 'port')
 app_token = th_config.get('main', 'app_token')
 user_token = th_config.get('main', 'user_token')
+logbook_url = th_config.get('main', 'logbook_url')
 # also: getfloat, getint, getboolean
 
 # log
@@ -46,8 +47,8 @@ log.addHandler(fh)
 
 log.warning(service_name+" is (re)starting !")
 
-# send a restart info on pushover
-r = requests.post('https://api.pushover.net/1/messages.json', data = {'token':app_token, 'user':user_token, 'message':"le service "+service_name+" a redémarré..."})
+# send a restart info to logbook
+requests.get(logbook_url, params={'machine': "bc-watch", 'service': service_name, 'message': "redémarrage"})
 
 # =======================================================
 # URL handlers

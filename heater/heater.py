@@ -22,13 +22,16 @@ from bottle import run, request, get
 import glob
 import os
 from influxdb import InfluxDBClient
+import re
+import sys
+import socket
+
 
 try:
     import RPi.GPIO as GPIO
 except RuntimeError:
     print("Error importing RPi.GPIO!  This is probably because you need superuser privileges.  You can achieve this by using 'sudo' to run your script")
     exit(1)
-
 
 # =======================================================
 
@@ -56,7 +59,7 @@ def read_profile_settings(name):
     delta_temp_minus = float(th_config.get("thermostat", "delta_temp_minus"))
     calendrier = eval(th_config.get("thermostat", "calendrier"))
     log.info("loading profile '"+profile+"'")
-    # requests.get(logbook_url, params={'text': service_name+" - profil de chauffage:"+name})
+    requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "profil de chauffage=="+name})
 
 
 def save_new_profile_to_ini():
@@ -104,7 +107,7 @@ def export_to_influxdb():
             print e.__str__()
             log.error(e)
             log.error("Error reaching infludb on "+str(influxdb_host)+":"+str(influxdb_port))
-            requests.get(logbook_url, params={'text': service_name+" - ERREUR: impossible d'accéder à influxdb!"})
+            requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "ERREUR! impossible d'accéder à influxdb!"})
 
 
 # =======================================================
@@ -156,7 +159,6 @@ def check_temp_update():
             if (is_calendar_on_eco(calendrier)):
                 if (th_mode == ThMode.COMFORT):
                     log.info("switching to ECO mode")
-                    # requests.get(logbook_url, params={'text': service_name+" - passage en mode ECO"})
                     th_mode = ThMode.ECO
                     # log.debug("sending (ORDERS): basecamp_HQ_heater_info, {'mode':'ECO'}")
                     # msg = msgpack.packb(["basecamp_HQ_heater_info","{'mode':'ECO'}"])
@@ -165,7 +167,6 @@ def check_temp_update():
             else:
                 if (th_mode == ThMode.ECO):
                     log.info("switching to COMFORT mode")
-                    # requests.get(logbook_url, params={'text': service_name+" - passage en mode CONFORT"})
                     th_mode = ThMode.COMFORT
                     # log.debug("sending (ORDERS): basecamp_HQ_heater_info, {'mode':'COMFORT'}")
                     # msg = msgpack.packb(["basecamp_HQ_heater_info","{'mode':'COMFORT'}"])
@@ -186,7 +187,6 @@ def check_temp_update():
             if (float(temp_in) >= (aimed_temp+float(delta_temp_plus)) and (relay_out == 1)):
                 # stop the heater
                 log.info("therm: %.2f reached (%.2f max, %.2f aimed), stopping the heater" % (float(temp_in), (aimed_temp+float(delta_temp_plus)), float(aimed_temp)))
-                # requests.get(logbook_url, params={'text': service_name+" - arrêt du chauffage"})
                 # switch using GPIO + check with probe
                 log.info("resetting the heater relay")
                 GPIO.output(reset, 1)
@@ -196,6 +196,7 @@ def check_temp_update():
                     log.info("relay probe is HIGH")
                     # alarm if probe is not LOW
                     log.error("unable to reset heater relay, stopping here")
+                    requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "ERREUR! impossible d'ouvrir le relais!"})
                     exit(1)
                 else:
                     log.info("heater latching relay is OFF")
@@ -208,7 +209,6 @@ def check_temp_update():
             elif ((float(temp_in) <= (aimed_temp-float(delta_temp_minus))) and (relay_out == 0)):
                 # start the heater
                 log.info("therm: %.2f reached (%.2f min, %.2f aimed), starting the heater" % (float(temp_in), (float(aimed_temp)-float(delta_temp_minus)), float(aimed_temp)))
-                # requests.get(logbook_url, params={'text': service_name+" - démarrage du chauffage"})
                 # switch using GPIO + check with probe
                 log.info("setting the heater relay")
                 GPIO.output(set, 1)
@@ -220,6 +220,7 @@ def check_temp_update():
                     log.info("relay probe is LOW")
                     # alarm if probe is not HIGH
                     log.error("unable to set heater relay, stopping here")
+                    requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "ERREUR! impossible de fermer le relais!"})
                     exit(1)
                 # send alarm if probe not ok
                 relay_out = 1
@@ -288,7 +289,8 @@ def do_set_profile():
 
 # =======================================================
 # init
-service_name = "heater"
+service_name = re.search("([^\/]*)\.py", sys.argv[0]).group(1)
+machine_name = socket.gethostname()
 
 # .ini
 th_config = configparser.ConfigParser()
@@ -314,9 +316,9 @@ fh.setFormatter(formatter)
 # add the handlers to the logger
 log.addHandler(fh)
 
-log.warning(service_name+" is (re)starting !")
+log.warning(service_name+" restarted")
 # send a restart info to logbook
-requests.get(logbook_url, params={'text': "le service "+service_name+" - redémarre..."})
+requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "redémarrage"})
 
 # influxdb init
 client = InfluxDBClient(influxdb_host, influxdb_port)
@@ -396,6 +398,7 @@ if GPIO.input(probe):
     log.info("relay probe is HIGH")
     # alarm if probe is not 0
     log.error("unable to reset heater relay, stopping here")
+    requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "ERREUR! impossible d'ouvrir le relais!"})
     exit(1)
 else:
     log.info("relay probe is LOW")
