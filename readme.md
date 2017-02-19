@@ -1,48 +1,75 @@
 # Basecamp
-[[toc]]
 
 ## Todo
 
 Pour bc-watch, bc-hq et bc-annex:
+- [ ] logbook => retourner avec l'ordre inversé (plus récent en premier)
 - [ ] Ajouter le monitoring du secteur avec désactivation du watchdog quand le secteur est perdu & réactivation après tempo quand il revient. Notifications par SMS si problème secteur, par pushover si problème watchdog (mais limiter le nombre de message pour ne pas flooder / boucles)
 - [ ] activer la gestion du chauffage via bc-power, avec heater.py en utilisant le relay bistable et plus la solution openzwave
-- [x] cabler la télé-info & lire UART + produire métrique(s) liées à la conso électrique
 - [ ] envisager de remonter automatiquement la consommation en utilisant python/scheduler
 - [ ] chauffage: mettre une alerte/info si confort pendant la nuit (oubli force_confort?) ou mettre durée d'application du force_confort!
-- [x] voire comment organiser la reco vocale + lightbox / présence (reprendre notes)
+- [x] voir comment organiser la reco vocale + lightbox / présence (reprendre notes)
 - [ ] tester snowboy & la reconnaissance de hotword/word hotspotting
 - [ ] coupler avec la lightbox, qui devra être installée derrière l'écran
 - [ ] bug: veilleuse exits if cannot request influxdb => should raise alarm in logbook, but go on
 - [ ] chip ethernet adapter bug workaround watchdog: le développer et le déployer pour les chip en ethernet
 - [ ] watchdog => implement a watchod service testing that regularly pings every machine+service using ping/http-alive/zmq-alive, alert if any problem, offers detailed results via HTTP + logbook agreggation on dedicated page.
 - [ ] chaque service doit utiliser logbook.
-- [ ] coder le chip ethernet adapter bug workaround watchdog
 - [ ] mettre au carré les logs dans le logbook - exemple: machine X, service Y, dire quel service sur quelle machine, etç...
 - [ ] installer GIT sur chaque machine & descendre le repo BASECAMP pour mettre à jour facilement les scripts locaux
+- [ ] bug: si perte secteur (plus d'ethernet ni internet) et que secteur revient => bc-watch n'est plus accessible par réseau!?!
+- [ ] todo: quand heater et power n'arrivent pas à joindre influxdb, erreur, mais les scripts continuent dans le vide => écrire erreur dans log + exit(1) => restart par supervisord
+- [ ] REFACTORING DES SERVICES:
+  - [ ] quand une action foire, écrire dans le log, notifier logbook (au moins essayer), et quitter avec un code d'erreur pour que supervisor relance
+  - [ ] @start: info logbook
+- [ ] améliorer monitoring: sur l'UI, avoir une interface vers les logs applicatifs de n'importe quel service, en plus des infos données par le _watchdog-master_. + prévoir des infos d'espace disque de chaque machine (df -h avec % important) => watchdog avec notif
 
+## Basecamp UI
+
+### Services/applications/machines Monitoring
+
+Basic page with iframes to:
++ watchdog_master status
++ logbook output
++ supervisor http UIs of each machines
+
+=> allows to easily start/stop programs and see program logs
 
 ## Services
 
-### [rules for every service]
+### [rules for every service] **[DONE]**
 Each service will be automatically started by **supervisord** (unless for windows OSes where the task scheduler will handle that).
+To enable supervisord http server access (and also xml-rpc API), use the following in supervisor.conf:
+```
+[inet_http_server]
+port=*:9001
+```
+Example of entry for a program in supervisor.conf:
+```
+[program:operator]
+command=/usr/bin/python ./operator.py
+directory=/home/nio/MUTA_interface
+user=nio
+redirect_stderr=true
+startsecs=10
+startretries=3
+autorestart=true
+```
+program logs should then be available through the supervisor http UI.
+
 **Logs and configurations** are handled locally, and source code is managed using a single github basecamp project.
 
-Each machine should send a notification to the LogBook service stating that **the machine has rebooted**.
-Each service automatically (re)started by supervisord should also send a notification using the same mechanism.
+Each machine should send a notification to the LogBook service stating that **the machine has rebooted**. We'll be using a basic shell script put into the `/etc/network/if-up.d/` directory, to send a notification to the logbook when the network is up (see `if-up/` in sources).
+Each service automatically (re)started by supervisord should also send a notification to the logbook.
 
-### chip ethernet adapter bug workaround watchdog
-Sometimes the kernel will loose eth0, with a `r8152 1-1:1.0 eth0: Tx timeout` entry in `/var/log/kernel.log`...
-The idea is to have a python watchdog script that reboots the CHIP machine is that happens...
-tip: use https://pypi.python.org/pypi/tailer/
-
-### pushover_operator
+### pushover_operator **[DONE]**
 + purpose: send pushover notifications
 + machine: bc-watch
 + interface: HTTP, port:8080
   + http://192.168.1.54:8080/send_pushover_notification?text=héhé => OK
   + http://192.168.1.54:8080/alive => OK
 
-### TTS
+### TTS **[DONE]**
 + purpose: generate wav from text message using TTS
 + machine: bc-annex.local (192.168.1.55)
 + interface: HTTP, port 8080
@@ -50,9 +77,9 @@ tip: use https://pypi.python.org/pypi/tailer/
   + http://192.168.1.55:8080/alive => OK
 + TODO:
   + sox in out contrast
-  + sox 
+  + sox
 
-### logbook
+### logbook **[DONE]**
 + purpose: keep a trace of all minor events (major problems are notified in realtime using pushover/SMS) into a centralized log file.
 + machine: bc-watch
 + interface: HTTP, port:8082
@@ -61,20 +88,20 @@ tip: use https://pypi.python.org/pypi/tailer/
     + using a rotating logfile with a low size, we are returning the current logfile through this request
   + http://192.168.1.54:8082/alive => OK
 
-### SMS_operator
+### SMS_operator **[DONE]**
 + purpose: send SMS notifications + receive SMS from outside
 + machine: bc-watch
 + interface: HTTP, port:8081
-  + http://192.168.1.54:8080/send_SMS?text=héhé => OK
-  + http://192.168.1.54:8080/alive => OK
+  + http://192.168.1.54:8081/send_SMS?text=héhé => OK
+  + http://192.168.1.54:8081/alive => OK
 + if an incoming SMS is detected, its content is broadcasted on Basecamp's PUB ZMQ channel with the topic _basecamp.SMS.incoming_
 
-### veilleuse
+### veilleuse **[DONE]**
 + purpose: turn ON/OFF some night lights based on the outdoor light level, as measured by MUTA scout units
 + machine: bc-presence
 + when the outdoor light level rises/falls above/under a light threshold, a latching relay is activated to turn OFF/ON night lights.
 
-### heater
+### heater **[DONE]**
 + purpose: monitors temperature, and depending on heating profiles, commands the heater latching relay to start/stop heating
 + interface: ZMQ SUB
   + topic: basecamp.muta.update
@@ -90,18 +117,27 @@ tip: use https://pypi.python.org/pypi/tailer/
 + exports regularly (+at every modification) variables to influxdb for recording the goal temperature + the latching relay state (0/1)
 + machine: bc-power
 
-### power_monitoring
+### power_monitoring **[DONE]**
 + purpose: monitors the power consumption and send metrics to influxdb
 + machine: bc-power
 
-### watchdog
-purpose: check regularly every machine/server/service and report on a dedicated HTTP page plus send pushover notifications or sms notifications if needed. Must prevent flooding on pushover/sms.
-+ monitors the main power supply and send an alert by SMS
+### watchdog (watchdog_master, watchdog_client)
+purpose: Detect any problem on a machine/service, and if so, reboot/restart it, then report.
++ Check regularly every machine/server/service and report on a dedicated HTTP page plus send pushover notifications or sms notifications if needed. Must handle flooding prevention on pushover/sms channels.
++ checking a service consists of testing it, and also testing the supervisord API/server to get the status and uptime. This is done using supervisor's XML RPC API (http://supervisord.org/api.html#xml-rpc). For each machine, supervisord's status should also be check beforehand.
++ begins by checking every service on a given machine, then send an OK/KO message to this machine's _watchdog_client_. If the message is KO, the machine will reboot (and the service will be restarted).
++ To able to restart a machine that has lost network connections, _watchdog_clients_ are installed on each machine. If the _watchdog_client_ hasn't received a watchdog_master signal for a given time (10mn?), then the watchdog_client will also reboot the machine.
++ If the problem is encountered with a docker container service, we should also docker/stop/rm and start again the services, instead of just rebooting, to re-create the containers. A dedicated script should be used (see `watchdog/docker_scripts` in sources).
++ monitors also the main power supply and sends an alert by SMS
 + monitors the internet access availability, and send a pushover notification when it is not available
++ machine for _watchdog_master_: bc-watch
++ interface: HTTP, port:8083
+  + http://192.168.1.54:8083/watch_report => report services & machines status, by machine (JSON)
+  + http://192.168.1.54:8083/alive => OK
 
 ### presence
 
-### interphone
+### interphone **[DONE]**
 + purpose: makes TTS anouncements based on presence events or on demand of other services. Future versions will use hotword detection (snowboy) and lightbox.
 + machine: bc-ui.local (i.e. _basecamp-hq.local_ right now)
 + interface: ZMQ SUB
@@ -109,21 +145,21 @@ purpose: check regularly every machine/server/service and report on a dedicated 
 
 ### lightbox
 
-### scheduler
+### scheduler **[DONE]**
 every 1/4 of hour, the time will be announced through interphone, according to time and presence status.
+
 
 ## cam2cam
 
 rtsp://192.168.1.95/11<br>
 rtsp://192.168.1.95/12
 
-
 ## Machines
-Many services are set on many machines. Interactions between them are done using time-series database (influxdb), and/or a ZMQ pub/sub messaging facility.
+Many services are set on many machines. Complex interactions between them are done using time-series database (influxdb), and/or a ZMQ pub/sub messaging facility. Simple interactions are done using basic HTTP requests and servers.
 
 * `bc-ui` (Xubuntu on an old Intel NUC, remote desktop/Nomachine & ssh nio@bc-hq.local, TO BE INSTALLED) is the main basecamp UI, to interact with guests. A 24" touch-enabled LCD is used to browse the web server UI (using _firefox_ in fullscreen), a loudspeaker is used to make announcements (using the **interphone** service), and a **lightpack** USB module is used to bring a visual feedback, if needed. Located in the main room, it is powered by an old **Intel NUC**, under **Xubuntu**.
   * bonjour: bc-ui.local, basecamp.local (old)
-  * fixed IP: 192.168.1.52 
+  * fixed IP: 192.168.1.52
 
 * `bc-hq` (Xubuntu on recent Intel NUC, remote desktop/Nomachine & ssh nio@bc-hq.local, UP) is the main backend. It's hosting the time-series database **influxdb** and it's graphing module **graphana**, the main UI web server powered by **bottle**, and the interface to the wireless field units via the USB connected **operator** unit. It is powered by a recent **Intel NUC**, under **Xubuntu**.
   * bonjour: bc-hq.local
@@ -132,7 +168,6 @@ Many services are set on many machines. Interactions between them are done using
 * `bc-annex` (win7 on old Atom, remote desktop/Nomachine bc-watch.local, UP) mainly hosts the windows-based SAPI5 synthesis, and the **interphone** server module. It also host some periodical scraping / transcoding tasks (video feeds), and some scraping about the weather forecast. It is powered by an old **Atom** motherboard, under **windows 7**.
   * bonjour: bc-annex.local
   * fixed IP: 192.168.1.55
-
 
 * `bc-watch` (Debian Jessi on CHIP, ssh chip@bc-watch.local, UP) is the watchdog module, EPS backed, able to detect any power outage, and equipped with an USB 3G/4G modem to sens/receive SMS. It's also in charge of configuring the router's port forwarding via UPnP to temporarily allow external access to the basecamp UI, of monitoring presence, and of handling pushover notifications in parallel of SMS dialogs. It is powered by a headless C.H.I.P., with a powered hub (required for powering the USB modem), and an USB ethernet adapter (_because I use wifi only if I can't use ethernet_).
   * bonjour: bc-watch.local
@@ -160,33 +195,6 @@ Many services are set on many machines. Interactions between them are done using
 use a dedicated script in `/etc/network/if-up.d` to send a logbook notification for every machine restart.
 <br>_or in /etc/rc.local on rpi for example, since the above doesn't work, they broke the if-up.d mechanism on the last raspbian..._
 
-```shell
-#!/bin/sh
-
-# Thanks to Celada for this script/idea:
-# from http://unix.stackexchange.com/questions/166473/debian-how-to-run-a-script-on-startup-as-soon-as-there-is-an-internet-connecti
-
-FLAGFILE=/var/run/work-was-already-done
-
-case "$IFACE" in
-    lo)
-        # The loopback interface does not count.
-        # only run when some other interface comes up
-        exit 0
-        ;;
-    *)
-        ;;
-esac
-
-if [ -e $FLAGFILE ]; then
-    exit 0
-else
-    touch $FLAGFILE
-fi
-
-# here, do the real work.
-http GET 192.168.1.54:8082/add_to_logbook text=="la machine X a redémarré."
-```
 
 ## ZMQ messaging
 
