@@ -3,7 +3,12 @@
 ## Todo
 
 Pour bc-watch, bc-hq et bc-annex:
-- [ ] modif logbook + service_name & machine_name auto pour chaque service + revoir restart+events+errors -> log+logbook. Done: power, heater
+- [ ] modif format logbook + service_name & machine_name auto pour chaque service & pour restart machine! + revoir restart+events+errors -> log+logbook. + modif log: stdout/stderr en copie de log applicatif (pour retrouver dans supervisor). file log: DEBUG, console log: ERROR
+  - [ ] bc-power: power, heater
+  - [ ] bc-presence: 
+  - [ ] bc-watch: 
+  - [ ] bc-hq: 
+  - [ ] bc-ui: 
 - [ ] Ajouter le monitoring du secteur avec désactivation du watchdog quand le secteur est perdu & réactivation après tempo quand il revient. Notifications par SMS si problème secteur, par pushover si problème watchdog (mais limiter le nombre de message pour ne pas flooder / boucles)
 - [ ] envisager de remonter automatiquement la consommation en utilisant python/scheduler
 - [ ] chauffage: mettre une alerte/info si confort pendant la nuit (oubli force_confort?) ou mettre durée d'application du force_confort!

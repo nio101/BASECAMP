@@ -310,11 +310,16 @@ log.setLevel(logging.DEBUG)
 fh = logging.handlers.RotatingFileHandler(
               logfile, maxBytes=8000000, backupCount=5)
 fh.setLevel(logging.DEBUG)
+# create console hangler with higher level
+ch = logging.StreamHandler()
+ch.setLevel(logging.INFO)
 # create formatter and add it to the handlers
 formatter = logging.Formatter('%(asctime)s - [%(name)s] %(levelname)s: %(message)s')
 fh.setFormatter(formatter)
+ch.setFormatter(formatter)
 # add the handlers to the logger
 log.addHandler(fh)
+log.addHandler(ch)
 
 log.warning(service_name+" restarted")
 # send a restart info to logbook

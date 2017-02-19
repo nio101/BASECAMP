@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# this shell script is to be put into /etc/network/if-up.d/
+
 # Thanks to Celada for this script/idea:
 # from http://unix.stackexchange.com/questions/166473/debian-how-to-run-a-script-on-startup-as-soon-as-there-is-an-internet-connecti
 
@@ -15,7 +17,7 @@ case "$IFACE" in
 
 	# here, do the real work.
 	# requires httpie
-	/usr/local/bin/http GET 192.168.1.54:8082/add_to_logbook text=="la machine XYZ a redémarré."
+	/usr/local/bin/http GET 192.168.1.54:8082/add_to_logbook machine=="bc-power" service=="" message=="redémarrage"
     ;;
 
     *)

@@ -39,9 +39,9 @@ def export_metrics():
     global power
     global nb_power
     global last_index
-    print("... time to export metrics to influxdb!")
+    log.debug("... time to export metrics to influxdb!")
     if (last_index is not None) and (nb_power > 0) and (nb_current > 0):
-        print("nb_current: %i, nb_power = %i, last_index = %i" % (nb_current, nb_power, last_index))
+        log.info("nb_current: %i, nb_power = %i, last_index = %i" % (nb_current, nb_power, last_index))
         current_avg = float("{0:.1f}".format(float(current) / float(nb_current)))
         power_avg = float("{0:.1f}".format(float(power) / float(nb_power)))
         current = 0
@@ -50,7 +50,6 @@ def export_metrics():
         nb_power = 0
         influx_json_body[0]['time'] = datetime.datetime.utcnow().isoformat()
         influx_json_body[0]['fields'] = {'current': current_avg, 'power': power_avg, 'index': last_index}
-        print("writing to influxdb: "+str(influx_json_body))
         log.info("writing to influxdb: "+str(influx_json_body))
         try:
             client.write_points(influx_json_body)
@@ -60,9 +59,9 @@ def export_metrics():
             log.error("Error reaching infludb on "+str(influxdb_host)+":"+str(influxdb_port))
             requests.get(logbook_url, params={'text': service_name+" - ERREUR: impossible d'accéder à influxdb!"})
     else:
-        print("nothing to export!")
+        log.warning("nothing to export!")
     t = Timer(2*60.0, export_metrics)
-    t.start()    
+    t.start()
 
 
 # =======================================================
@@ -86,11 +85,16 @@ log.setLevel(logging.DEBUG)
 fh = logging.handlers.RotatingFileHandler(
               logfile, maxBytes=8000000, backupCount=5)
 fh.setLevel(logging.DEBUG)
+# create console hangler with higher level
+ch = logging.StreamHandler()
+ch.setLevel(logging.INFO)
 # create formatter and add it to the handlers
 formatter = logging.Formatter('%(asctime)s - [%(name)s] %(levelname)s: %(message)s')
 fh.setFormatter(formatter)
+ch.setFormatter(formatter)
 # add the handlers to the logger
 log.addHandler(fh)
+log.addHandler(ch)
 
 log.warning(service_name+" is (re)starting !")
 # send a restart info to logbook
@@ -134,21 +138,21 @@ with serial.Serial(port='/dev/ttyAMA0', baudrate=1200, bytesize=serial.SEVENBITS
         new_line = str(ser.readline(), 'ascii')
         # print(new_line)
         res = p_current.search(new_line)
-        #print(res)
+        # print(res)
         if (res is not None):
             current = current + int(res.group(1))
             nb_current = nb_current + 1
-            print('C', end='')
+            # print('C', end='')
         else:
             res = p_power.search(new_line)
             if (res is not None):
                 power = power + int(res.group(1))
                 nb_power = nb_power + 1
-                print('P', end='')
+                # print('P', end='')
             else:
                 res = p_index.search(new_line)
                 if (res is not None):
                     last_index = int(res.group(1))
-                    print('I', end='')
-                    sys.stdout.flush()
+                    # print('I', end='')
+                    # sys.stdout.flush()
 
