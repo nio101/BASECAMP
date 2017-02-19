@@ -33,7 +33,7 @@ log = logging.getLogger(service_name)
 log.setLevel(logging.INFO)
 # create file handler
 fh = logging.handlers.RotatingFileHandler(
-              logfile, maxBytes=8000000, backupCount=5)
+              logfile, maxBytes=500000, backupCount=5)
 fh.setLevel(logging.DEBUG)
 # create formatter and add it to the handlers
 formatter = logging.Formatter('%(asctime)s: %(message)s')
@@ -41,7 +41,8 @@ fh.setFormatter(formatter)
 # add the handlers to the logger
 log.addHandler(fh)
 
-log.warning(service_name+" service is (re)starting")
+# add its own restart info
+log.warning("[%s] [%s] :  redémarrage" % ("bc-watch", service_name))
 
 # =======================================================
 # URL handlers
@@ -54,8 +55,10 @@ def do_alive():
 
 @get('/add_to_logbook')
 def do_add():
-    uni_text = request.query.text
-    log.info("%s" % uni_text)
+    machine = request.query.machine
+    service = request.query.service
+    message = request.query.message
+    log.info("[%s] [%s] : %s" % (machine, service, message))
     return "OK"
 
 
@@ -69,9 +72,8 @@ def do_get():
     <meta http-equiv=\"expires\" content=\"Tue, 01 Jan 1980 1:00:00 GMT\" />\
     <meta http-equiv=\"pragma\" content=\"no-cache\" />"
     res += "<html><h2>Basecamp Logbook:</h2><pre>"
-    with open(logfile) as f:
-        for line in f:
-            res += line
+    for line in reversed(open(logfile).readlines()):
+        res += line
     res += "</pre></html>"
     return res
 

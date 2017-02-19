@@ -3,7 +3,6 @@
 ## Todo
 
 Pour bc-watch, bc-hq et bc-annex:
-- [ ] logbook => retourner avec l'ordre inversé (plus récent en premier)
 - [ ] Ajouter le monitoring du secteur avec désactivation du watchdog quand le secteur est perdu & réactivation après tempo quand il revient. Notifications par SMS si problème secteur, par pushover si problème watchdog (mais limiter le nombre de message pour ne pas flooder / boucles)
 - [ ] activer la gestion du chauffage via bc-power, avec heater.py en utilisant le relay bistable et plus la solution openzwave
 - [ ] envisager de remonter automatiquement la consommation en utilisant python/scheduler
@@ -83,7 +82,7 @@ Each service automatically (re)started by supervisord should also send a notific
 + purpose: keep a trace of all minor events (major problems are notified in realtime using pushover/SMS) into a centralized log file.
 + machine: bc-watch
 + interface: HTTP, port:8082
-  + http://192.168.1.54:8082/add_to_logbook?text=héhé => OK
+  + http://192.168.1.54:8082/add_to_logbook?machine=...&service=...&message=... => message as unicode is fine
   + http://192.168.1.54:8082/get_logbook => get the logfile as text
     + using a rotating logfile with a low size, we are returning the current logfile through this request
   + http://192.168.1.54:8082/alive => OK
