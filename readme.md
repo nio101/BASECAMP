@@ -3,29 +3,26 @@
 ## Todo
 
 Pour bc-watch, bc-hq et bc-annex:
-- [ ] modif format logbook + service_name & machine_name auto pour chaque service & pour restart machine! + revoir restart+events+errors -> log+logbook. + modif log: stdout/stderr en copie de log applicatif (pour retrouver dans supervisor). file log: DEBUG, console log: ERROR
-  - [ ] bc-power: power, heater
-  - [ ] bc-presence: 
-  - [ ] bc-watch: 
-  - [ ] bc-hq: 
-  - [ ] bc-ui: 
+- [ ] A) modif format logbook (python+shell) + B) service_name & machine_name auto pour chaque service & pour restart machine! + C)revoir restart+events+errors -> log+logbook. + D) modif log: stdout/stderr en copie de log applicatif (pour retrouver dans supervisor). E) file log: DEBUG, console log: ERROR
+    + REFACTORING DES SERVICES:
+      + quand une action ESSENTIELLE foire, écrire dans le log, notifier logbook (au moins essayer), et quitter avec un code d'erreur pour que supervisor relance?
+      + si action PAS ESSENTIELLE, on peut continuer après écriture log+logbook
+      + @start: info logbook
+  - [x] bc-power: power, heater
+  - [x] bc-presence: veilleuse
+  - [x] bc-watch: logbook, SMS_operator, pushover_operator
+  - [x] bc-hq: scheduler, zmq_fw, MUTA_operator
+  - [ ] bc-ui: interphone
+- [x] bc-presence/veilleuse: implémenter la solution proposée par l'auteur de CHIP_IO sur github pour contourner le problème de GPIO déjà configuré (qui oblige à rebooter sinon)
+- [x] bc-presence/veilleuse: [bug] veilleuse exits if cannot request influxdb => should raise alarm in logbook, but go on
 - [ ] Ajouter le monitoring du secteur avec désactivation du watchdog quand le secteur est perdu & réactivation après tempo quand il revient. Notifications par SMS si problème secteur, par pushover si problème watchdog (mais limiter le nombre de message pour ne pas flooder / boucles)
 - [ ] envisager de remonter automatiquement la consommation en utilisant python/scheduler
 - [ ] chauffage: mettre une alerte/info si confort pendant la nuit (oubli force_confort?) ou mettre durée d'application du force_confort!
 - [x] voir comment organiser la reco vocale + lightbox / présence (reprendre notes)
 - [ ] tester snowboy & la reconnaissance de hotword/word hotspotting
 - [ ] coupler avec la lightbox, qui devra être installée derrière l'écran
-- [ ] bug: veilleuse exits if cannot request influxdb => should raise alarm in logbook, but go on
-- [ ] chip ethernet adapter bug workaround watchdog: le développer et le déployer pour les chip en ethernet
 - [ ] watchdog => implement a watchod service testing that regularly pings every machine+service using ping/http-alive/zmq-alive, alert if any problem, offers detailed results via HTTP + logbook agreggation on dedicated page.
-- [ ] chaque service doit utiliser logbook.
-- [ ] mettre au carré les logs dans le logbook - exemple: machine X, service Y, dire quel service sur quelle machine, etç...
-- [ ] installer GIT sur chaque machine & descendre le repo BASECAMP pour mettre à jour facilement les scripts locaux
 - [ ] bug: si perte secteur (plus d'ethernet ni internet) et que secteur revient => bc-watch n'est plus accessible par réseau!?!
-- [ ] REFACTORING DES SERVICES:
-  - [ ] quand une action ESSENTIELLE foire, écrire dans le log, notifier logbook (au moins essayer), et quitter avec un code d'erreur pour que supervisor relance?
-  - [ ] si action PAS ESSENTIELLE, on peut continuer après écriture log+logbook
-  - [ ] @start: info logbook
 - [ ] améliorer monitoring: sur l'UI, avoir une interface vers les logs applicatifs de n'importe quel service, en plus des infos données par le _watchdog-master_. + prévoir des infos d'espace disque de chaque machine (df -h avec % important) => watchdog avec notif
 
 ## Basecamp UI
@@ -96,7 +93,7 @@ Each service automatically (re)started by supervisord should also send a notific
 + purpose: send SMS notifications + receive SMS from outside
 + machine: bc-watch
 + interface: HTTP, port:8081
-  + http://192.168.1.54:8081/send_SMS?text=héhé => OK
+  + http://192.168.1.54:8081/send_SMS?msisdn=%2B33607080910&text=héhé => OK
   + http://192.168.1.54:8081/alive => OK
 + if an incoming SMS is detected, its content is broadcasted on Basecamp's PUB ZMQ channel with the topic _basecamp.SMS.incoming_
 
@@ -134,6 +131,7 @@ purpose: Detect any problem on a machine/service, and if so, reboot/restart it, 
 + If the problem is encountered with a docker container service, we should also docker/stop/rm and start again the services, instead of just rebooting, to re-create the containers. A dedicated script should be used (see `watchdog/docker_scripts` in sources).
 + monitors also the main power supply and sends an alert by SMS
 + monitors the internet access availability, and send a pushover notification when it is not available
++ à vérifier: suite à coupure secteur, on ne peut plus atteindre bc-watch? si bc-watch n'arrive plus à atteindre la passerelle/routeur, envoi SMS d'info + faire un reboot de bc-watch. Suffisant?
 + machine for _watchdog_master_: bc-watch
 + interface: HTTP, port:8083
   + http://192.168.1.54:8083/watch_report => report services & machines status, by machine (JSON)

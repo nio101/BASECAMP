@@ -14,11 +14,15 @@ from bottle import run, request, get
 import logging
 import logging.handlers
 import configparser
+import re
+import sys
+import socket
 
 
 # =======================================================
 # init
-service_name = "logbook"
+service_name = re.search("([^\/]*)\.py", sys.argv[0]).group(1)
+machine_name = socket.gethostname()
 
 # .ini
 th_config = configparser.ConfigParser()
@@ -30,19 +34,25 @@ port = th_config.getint('main', 'port')
 
 # log
 log = logging.getLogger(service_name)
-log.setLevel(logging.INFO)
+log.setLevel(logging.DEBUG)
 # create file handler
-fh = logging.handlers.RotatingFileHandler(
-              logfile, maxBytes=500000, backupCount=5)
+# fh = logging.handlers.RotatingFileHandler(
+#              logfile, maxBytes=8000000, backupCount=5)
+fh = logging.handlers.TimedRotatingFileHandler(logfile, when='D', interval=1, backupCount=7)
 fh.setLevel(logging.DEBUG)
+# create console hangler with higher level
+ch = logging.StreamHandler()
+ch.setLevel(logging.INFO)
 # create formatter and add it to the handlers
-formatter = logging.Formatter('%(asctime)s: %(message)s')
+formatter = logging.Formatter('%(asctime)s - [%(name)s] %(levelname)s: %(message)s')
 fh.setFormatter(formatter)
+ch.setFormatter(formatter)
 # add the handlers to the logger
 log.addHandler(fh)
+log.addHandler(ch)
 
 # add its own restart info
-log.warning("[%s] [%s] : redémarrage" % ("bc-watch", service_name))
+log.info("[%s] [%s] : redémarrage" % ("bc-watch", service_name))
 
 # =======================================================
 # URL handlers
@@ -76,7 +86,6 @@ def do_get():
         res += line
     res += "</pre></html>"
     return res
-
 
 # =======================================================
 # main loop

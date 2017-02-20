@@ -1,1 +1,1 @@
-python fw.py 5000 5001 
+python zmq_fw.py 5000 5001 

@@ -57,7 +57,7 @@ def export_metrics():
             print(e.__str__())
             log.error(e)
             log.error("Error reaching infludb on "+str(influxdb_host)+":"+str(influxdb_port))
-            requests.get(logbook_url, params={'text': service_name+" - ERREUR: impossible d'accéder à influxdb!"})
+            requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "ERREUR: impossible d'accéder à influxdb!"})
     else:
         log.warning("nothing to export!")
     t = Timer(2*60.0, export_metrics)

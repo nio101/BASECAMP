@@ -15,11 +15,15 @@ import logging
 import logging.handlers
 import configparser
 import requests
+import re
+import sys
+import socket
 
 
 # =======================================================
 # init
-service_name = "pushover_operator"
+service_name = re.search("([^\/]*)\.py", sys.argv[0]).group(1)
+machine_name = socket.gethostname()
 
 # .ini
 th_config = configparser.ConfigParser()
@@ -39,16 +43,21 @@ log.setLevel(logging.DEBUG)
 fh = logging.handlers.RotatingFileHandler(
               logfile, maxBytes=8000000, backupCount=5)
 fh.setLevel(logging.DEBUG)
+# create console hangler with higher level
+ch = logging.StreamHandler()
+ch.setLevel(logging.INFO)
 # create formatter and add it to the handlers
 formatter = logging.Formatter('%(asctime)s - [%(name)s] %(levelname)s: %(message)s')
 fh.setFormatter(formatter)
+ch.setFormatter(formatter)
 # add the handlers to the logger
 log.addHandler(fh)
+log.addHandler(ch)
 
 log.warning(service_name+" is (re)starting !")
 
 # send a restart info to logbook
-requests.get(logbook_url, params={'machine': "bc-watch", 'service': service_name, 'message': "redémarrage"})
+requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "redémarrage"})
 
 # =======================================================
 # URL handlers

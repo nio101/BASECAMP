@@ -104,7 +104,7 @@ def export_to_influxdb():
         try:
             client.write_points(influx_json_body)
         except Exception as e:
-            print e.__str__()
+            print(e.__str__())
             log.error(e)
             log.error("Error reaching infludb on "+str(influxdb_host)+":"+str(influxdb_port))
             requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "ERREUR! impossible d'accéder à influxdb!"})
