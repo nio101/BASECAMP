@@ -145,8 +145,11 @@ def send_SMS():
 
 
 def check_incoming_SMS():
+    global consecutive_check_failures
+    global last_try_OK
     try:
         status = sm.GetSMSStatus()
+        last_try_OK = True
         remain = status['SIMUsed'] + status['PhoneUsed'] + status['TemplatesUsed']
         if (remain > 0):
             sms = []
@@ -179,13 +182,21 @@ def check_incoming_SMS():
         print(e.__str__())
         log.error(e)
         log.warning("could not check incoming SMS! :s")
-        requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "ERREUR! impossible de vérifier présence SMS"})
+        if last_try_OK is not True:
+            consecutive_check_failures = consecutive_check_failures + 1
+            if consecutive_check_failures == 3:
+                requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "ERREUR! impossible de vérifier présence SMS (3 fois de suite)"})
+                consecutive_check_failures = 0
+        else:
+            last_try_OK = False
     t = Timer(10.0, check_incoming_SMS)
     t.start()
 
 # =======================================================
 # main loop
 
+consecutive_check_failures = 0
+last_try_OK = True
 t = Timer(10.0, check_incoming_SMS)
 t.start()
 run(host=hostname, port=port)

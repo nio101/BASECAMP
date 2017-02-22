@@ -3,16 +3,17 @@
 ## Todo
 
 Pour bc-watch, bc-hq et bc-annex:
-- [ ] A) modif format logbook (python+shell) + B) service_name & machine_name auto pour chaque service & pour restart machine! + C)revoir restart+events+errors -> log+logbook. + D) modif log: stdout/stderr en copie de log applicatif (pour retrouver dans supervisor). E) file log: DEBUG, console log: ERROR
-    + REFACTORING DES SERVICES:
-      + quand une action ESSENTIELLE foire, écrire dans le log, notifier logbook (au moins essayer), et quitter avec un code d'erreur pour que supervisor relance?
-      + si action PAS ESSENTIELLE, on peut continuer après écriture log+logbook
-      + @start: info logbook
+- [x] A) modif format logbook (python+shell) + B) service_name & machine_name auto pour chaque service & pour restart machine! + C)revoir restart+events+errors -> log+logbook. + D) modif log: stdout/stderr en copie de log applicatif (pour retrouver dans supervisor). E) file log: DEBUG, console log: ERROR
+- [x] REFACTORING DES SERVICES:
+  - [x] quand une action ESSENTIELLE foire, écrire dans le log, notifier logbook (au moins essayer), et quitter avec un code d'erreur pour que supervisor relance?
+  - [x] si action PAS ESSENTIELLE, on peut continuer après écriture log+logbook
+  - [x] @start: info logbook
   - [x] bc-power: power, heater
   - [x] bc-presence: veilleuse
   - [x] bc-watch: logbook, SMS_operator, pushover_operator
-  - [x] bc-hq: scheduler, zmq_fw, MUTA_operator
-  - [ ] bc-ui: interphone
+  - [x] bc-hq: operator, zmq_forwarder, scheduler
+  - [x] bc-ui: interphone
+- [ ] ajouter alarme quand heater ne recoit pas d'update de température du salon depuis X minutes (avec reset)
 - [x] bc-presence/veilleuse: implémenter la solution proposée par l'auteur de CHIP_IO sur github pour contourner le problème de GPIO déjà configuré (qui oblige à rebooter sinon)
 - [x] bc-presence/veilleuse: [bug] veilleuse exits if cannot request influxdb => should raise alarm in logbook, but go on
 - [ ] Ajouter le monitoring du secteur avec désactivation du watchdog quand le secteur est perdu & réactivation après tempo quand il revient. Notifications par SMS si problème secteur, par pushover si problème watchdog (mais limiter le nombre de message pour ne pas flooder / boucles)
@@ -24,6 +25,7 @@ Pour bc-watch, bc-hq et bc-annex:
 - [ ] watchdog => implement a watchod service testing that regularly pings every machine+service using ping/http-alive/zmq-alive, alert if any problem, offers detailed results via HTTP + logbook agreggation on dedicated page.
 - [ ] bug: si perte secteur (plus d'ethernet ni internet) et que secteur revient => bc-watch n'est plus accessible par réseau!?!
 - [ ] améliorer monitoring: sur l'UI, avoir une interface vers les logs applicatifs de n'importe quel service, en plus des infos données par le _watchdog-master_. + prévoir des infos d'espace disque de chaque machine (df -h avec % important) => watchdog avec notif
+- [ ] check restart auto des machines après coupure de courant: ex. de bc-hq qui ne repart pas... :( voir réglages BIOS comme bc-ui + utiliser wakeonlan depuis bc-watch si nécessaire?
 
 ## Basecamp UI
 
@@ -93,7 +95,7 @@ Each service automatically (re)started by supervisord should also send a notific
 + purpose: send SMS notifications + receive SMS from outside
 + machine: bc-watch
 + interface: HTTP, port:8081
-  + http://192.168.1.54:8081/send_SMS?msisdn=%2B33607080910&text=héhé => OK
+  + http://192.168.1.54:8081/send_SMS?text=héhé => OK
   + http://192.168.1.54:8081/alive => OK
 + if an incoming SMS is detected, its content is broadcasted on Basecamp's PUB ZMQ channel with the topic _basecamp.SMS.incoming_
 

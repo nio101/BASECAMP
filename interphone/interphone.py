@@ -18,16 +18,22 @@ import time
 import os
 from subprocess import call
 import datetime
+import re
+import sys
+import socket
 
 
 # =======================================================
 # init
-service_name = "interphone"
+service_name = re.search("([^\/]*)\.py", sys.argv[0]).group(1)
+machine_name = socket.gethostname()
+
 # .ini
 th_config = configparser.ConfigParser()
 th_config.read(service_name+".ini")
 logfile = th_config.get('main', 'logfile')
 pushover_url = th_config.get('main', 'pushover_url')
+logbook_url = th_config.get('main', 'logbook_url')
 tts_url = th_config.get('main', 'tts_url')
 # also: getfloat, getint, getboolean
 
@@ -38,13 +44,20 @@ log.setLevel(logging.DEBUG)
 fh = logging.handlers.RotatingFileHandler(
               logfile, maxBytes=8000000, backupCount=5)
 fh.setLevel(logging.DEBUG)
+# create console hangler with higher level
+ch = logging.StreamHandler()
+ch.setLevel(logging.INFO)
 # create formatter and add it to the handlers
 formatter = logging.Formatter('%(asctime)s - [%(name)s] %(levelname)s: %(message)s')
 fh.setFormatter(formatter)
+ch.setFormatter(formatter)
 # add the handlers to the logger
 log.addHandler(fh)
+log.addHandler(ch)
 
 log.warning(service_name+" is (re)starting !")
+# send a restart info to logbook
+requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "redémarrage"})
 
 # ZMQ init
 context = zmq.Context()
@@ -62,9 +75,6 @@ log.debug("ZMQ connect: SUB on tcp://192.168.1.50:5001")
 time.sleep(1)
 poller = zmq.Poller()
 poller.register(socket_sub, zmq.POLLIN)
-
-# send a restart info on pushover
-# r = requests.get(pushover_url, params = {'text': "le service "+service_name+" a redémarré..."})
 
 # =======================================================
 # helpers
@@ -116,8 +126,8 @@ while should_continue is True:
             # call(["amixer", "-D", "pulse", "sset", "Master", str(volume)+"%"])
             now = datetime.datetime.now()
             if (now.hour < 7) or (now.hour > 23):
-                vol1 = "15%"
-                vol2 = "25%"
+                vol1 = "20%"
+                vol2 = "30%"
             else:
                 vol1 = "40%"
                 vol2 = "60%"            

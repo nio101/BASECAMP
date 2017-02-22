@@ -36,9 +36,7 @@ port = th_config.getint('main', 'port')
 log = logging.getLogger(service_name)
 log.setLevel(logging.DEBUG)
 # create file handler
-# fh = logging.handlers.RotatingFileHandler(
-#              logfile, maxBytes=8000000, backupCount=5)
-fh = logging.handlers.TimedRotatingFileHandler(logfile, when='D', interval=1, backupCount=7)
+fh = logging.handlers.TimedRotatingFileHandler(logfile, when='midnight', backupCount=7)
 fh.setLevel(logging.DEBUG)
 # create console hangler with higher level
 ch = logging.StreamHandler()
