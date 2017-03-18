@@ -125,22 +125,15 @@ while should_continue is True:
             # volume = 70
             # call(["amixer", "-D", "pulse", "sset", "Master", str(volume)+"%"])
             now = datetime.datetime.now()
-            if (now.hour < 7) or (now.hour > 23):
-                vol1 = "20%"
-                vol2 = "30%"
-            else:
-                vol1 = "40%"
-                vol2 = "60%"            
-            call(["amixer", "-D", "pulse", "sset", "Master", vol1])
-            os.system("aplay codeccall.wav")
-            time.sleep(0.2)
-            call(["amixer", "-D", "pulse", "sset", "Master", vol2])
-            os.system("aplay announce_plus_contrast.wav")
-            # time.sleep(0.2)
-            call(["amixer", "-D", "pulse", "sset", "Master", vol1])
-            os.system("aplay exit.wav")
-            # remove the file
-            os.remove(local_wav)
+            if (now.hour >= 7) and (now.hour <= 23):
+                vol1 = "50%"
+                call(["amixer", "-D", "pulse", "sset", "Master", vol1])
+                os.system("aplay codeccall.wav")
+                os.system("aplay codecopen.wav")
+                os.system("aplay announce_plus_contrast.wav")
+                os.system("aplay codecover.wav")
+                # remove the file
+                os.remove(local_wav)
         else:
             print("ERROR")
         # could perform snowbow hotword reco too ?

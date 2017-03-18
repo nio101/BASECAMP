@@ -3,19 +3,10 @@
 ## Todo
 
 Pour bc-watch, bc-hq et bc-annex:
-- [x] A) modif format logbook (python+shell) + B) service_name & machine_name auto pour chaque service & pour restart machine! + C)revoir restart+events+errors -> log+logbook. + D) modif log: stdout/stderr en copie de log applicatif (pour retrouver dans supervisor). E) file log: DEBUG, console log: ERROR
-- [x] REFACTORING DES SERVICES:
-  - [x] quand une action ESSENTIELLE foire, écrire dans le log, notifier logbook (au moins essayer), et quitter avec un code d'erreur pour que supervisor relance?
-  - [x] si action PAS ESSENTIELLE, on peut continuer après écriture log+logbook
-  - [x] @start: info logbook
-  - [x] bc-power: power, heater
-  - [x] bc-presence: veilleuse
-  - [x] bc-watch: logbook, SMS_operator, pushover_operator
-  - [x] bc-hq: operator, zmq_forwarder, scheduler
-  - [x] bc-ui: interphone
+
+- [ ] Tablette en veille quand absent ou dort, allumée sinon comme cadre photo avec flickr-groupe chouette du japon! le tout par 
 - [ ] ajouter alarme quand heater ne recoit pas d'update de température du salon depuis X minutes (avec reset)
-- [x] bc-presence/veilleuse: implémenter la solution proposée par l'auteur de CHIP_IO sur github pour contourner le problème de GPIO déjà configuré (qui oblige à rebooter sinon)
-- [x] bc-presence/veilleuse: [bug] veilleuse exits if cannot request influxdb => should raise alarm in logbook, but go on
+- [ ] quand coupure de courant, si bc-watch pas accessible, les autres services ne démarrent pas (logbook pas accessible => erreur). => fiabiliser watch 
 - [ ] Ajouter le monitoring du secteur avec désactivation du watchdog quand le secteur est perdu & réactivation après tempo quand il revient. Notifications par SMS si problème secteur, par pushover si problème watchdog (mais limiter le nombre de message pour ne pas flooder / boucles)
 - [ ] envisager de remonter automatiquement la consommation en utilisant python/scheduler
 - [ ] chauffage: mettre une alerte/info si confort pendant la nuit (oubli force_confort?) ou mettre durée d'application du force_confort!
@@ -26,6 +17,10 @@ Pour bc-watch, bc-hq et bc-annex:
 - [ ] bug: si perte secteur (plus d'ethernet ni internet) et que secteur revient => bc-watch n'est plus accessible par réseau!?!
 - [ ] améliorer monitoring: sur l'UI, avoir une interface vers les logs applicatifs de n'importe quel service, en plus des infos données par le _watchdog-master_. + prévoir des infos d'espace disque de chaque machine (df -h avec % important) => watchdog avec notif
 - [ ] check restart auto des machines après coupure de courant: ex. de bc-hq qui ne repart pas... :( voir réglages BIOS comme bc-ui + utiliser wakeonlan depuis bc-watch si nécessaire?
+- [ ] bug: si on perd zmq_forwarder, et qu'on le remet après, les subscribers ne recoivent pas les messages, il faut les relancer! (idem pour les publishers?) => en tenir compte pour chaque watchdog de machine. Heater & interphone HS. autres en envoi?
+- [ ] bug: bc-hq planté, plus d'accès réseau. cause?
+- [ ] faire un schéma ppt pour savoir qui utilise zmq, et qui utilise http
+- [ ] vérifier le statut du wifi et du bluetooth sur chaque device + fermer là où c'est attendu + check reboot-proof.
 
 ## Basecamp UI
 
@@ -35,7 +30,6 @@ Basic page with iframes to:
 + watchdog_master status
 + logbook output
 + supervisor http UIs of each machines
-
 => allows to easily start/stop programs and see program logs
 
 ## Services
@@ -157,6 +151,8 @@ every 1/4 of hour, the time will be announced through interphone, according to t
 
 rtsp://192.168.1.95/11<br>
 rtsp://192.168.1.95/12
+
+faire une appli python qui détecte les mouvements sur les rives et qui bufferise / capture lorsque mouvement
 
 ## Machines
 Many services are set on many machines. Complex interactions between them are done using time-series database (influxdb), and/or a ZMQ pub/sub messaging facility. Simple interactions are done using basic HTTP requests and servers.
