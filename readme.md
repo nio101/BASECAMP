@@ -4,7 +4,8 @@
 
 Pour bc-watch, bc-hq et bc-annex:
 
-- [ ] Tablette en veille quand absent ou dort, allumée sinon comme cadre photo avec flickr-groupe chouette du japon! le tout par 
+- [ ] Tablette en veille quand absent ou dort, allumée sinon comme cadre photo avec flickr-groupe chouette du japon! le tout par
+- [ ] mettre le début du chauffage à 6h30 le matin
 - [ ] ajouter alarme quand heater ne recoit pas d'update de température du salon depuis X minutes (avec reset)
 - [ ] quand coupure de courant, si bc-watch pas accessible, les autres services ne démarrent pas (logbook pas accessible => erreur). => fiabiliser watch 
 - [ ] Ajouter le monitoring du secteur avec désactivation du watchdog quand le secteur est perdu & réactivation après tempo quand il revient. Notifications par SMS si problème secteur, par pushover si problème watchdog (mais limiter le nombre de message pour ne pas flooder / boucles)
@@ -53,6 +54,8 @@ startretries=3
 autorestart=true
 ```
 program logs should then be available through the supervisor http UI.
+_supervisord_ is installed using pip, run with an entry like this on in `/etc/crontab`:
++ `@reboot root supervisord -c /home/chip/supervisord.conf`
 
 **Logs and configurations** are handled locally, and source code is managed using a single github basecamp project.
 
@@ -81,9 +84,10 @@ Each service automatically (re)started by supervisord should also send a notific
 + machine: bc-watch
 + interface: HTTP, port:8082
   + http://192.168.1.54:8082/add_to_logbook?machine=...&service=...&message=... => message as unicode is fine
-  + http://192.168.1.54:8082/get_logbook => get the logfile as text
-    + using a rotating logfile with a low size, we are returning the current logfile through this request
+  + http://192.168.1.54:8082/get_logbook => get the current day's logbook as text
+    + using a rotating logfile with a low size, we are returning the current day's logfile through this request
   + http://192.168.1.54:8082/alive => OK
++ TODO: add links to previous day's logbooks + changer l'ordre dans le log, mettre machine/service/type message/message
 
 ### SMS_operator **[DONE]**
 + purpose: send SMS notifications + receive SMS from outside
@@ -118,19 +122,18 @@ Each service automatically (re)started by supervisord should also send a notific
 + purpose: monitors the power consumption and send metrics to influxdb
 + machine: bc-power
 
-### watchdog (watchdog_master, watchdog_client)
+### watchdog (watchdog_master, watchdog_slave)
 purpose: Detect any problem on a machine/service, and if so, reboot/restart it, then report.
-+ Check regularly every machine/server/service and report on a dedicated HTTP page plus send pushover notifications or sms notifications if needed. Must handle flooding prevention on pushover/sms channels.
++ Check regularly every machine/server/service and report on a dedicated HTTP page plus send pushover notifications or sms notifications if needed. Must handle flooding prevention on pushover/sms channels + message queuing/storage if sending channel is not available
 + checking a service consists of testing it, and also testing the supervisord API/server to get the status and uptime. This is done using supervisor's XML RPC API (http://supervisord.org/api.html#xml-rpc). For each machine, supervisord's status should also be check beforehand.
-+ begins by checking every service on a given machine, then send an OK/KO message to this machine's _watchdog_client_. If the message is KO, the machine will reboot (and the service will be restarted).
-+ To able to restart a machine that has lost network connections, _watchdog_clients_ are installed on each machine. If the _watchdog_client_ hasn't received a watchdog_master signal for a given time (10mn?), then the watchdog_client will also reboot the machine.
++ begins by checking every service on a given machine, then send regularly an OK message to this machine's _watchdog_slave_. If the watchdog_slave doesn't receive this message, it will reboot it's own machine (network lost? os hangs?).
++ the watchdog_master should also test ZMQ pub/sub channels, and restart zmq_formwarder (then all zmq related services) in case of problem
 + If the problem is encountered with a docker container service, we should also docker/stop/rm and start again the services, instead of just rebooting, to re-create the containers. A dedicated script should be used (see `watchdog/docker_scripts` in sources).
 + monitors also the main power supply and sends an alert by SMS
 + monitors the internet access availability, and send a pushover notification when it is not available
-+ à vérifier: suite à coupure secteur, on ne peut plus atteindre bc-watch? si bc-watch n'arrive plus à atteindre la passerelle/routeur, envoi SMS d'info + faire un reboot de bc-watch. Suffisant?
 + machine for _watchdog_master_: bc-watch
 + interface: HTTP, port:8083
-  + http://192.168.1.54:8083/watch_report => report services & machines status, by machine (JSON)
+  + http://192.168.1.54:8083/status_report => report services & machines status, by machine (JSON)
   + http://192.168.1.54:8083/alive => OK
 
 ### presence
@@ -186,6 +189,11 @@ Many services are set on many machines. Complex interactions between them are do
      * bonjour: bc-power.local
      * fixed IP: 192.168.1.51
   
+ * `bc-water` (CHIP, ssh chip@bc-water.local, UP) is the module located near the water meter, outside the house, that will:
+   + measure the water consumption and send a metric to influxDB
+    * bonjour: bc-water.local
+    * fixed IP: 192.168.1.56
+   
 **supervisord** is used to monitor/start/stop modules on each machine.
 <br>**Bonjour/avahi** is used on machine to allow easy access using the **_\<hostname>.local_** syntax (_only to ease development, not to be used in production/resolution is very slow sometimes through python HTTP modules, use static IPs in that case_).
 
