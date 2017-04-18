@@ -12,8 +12,6 @@ import logging
 import logging.handlers
 import configparser
 import requests
-import umsgpack
-import zmq
 import time
 import schedule
 import re
@@ -32,6 +30,7 @@ th_config.read(service_name+".ini")
 logfile = th_config.get('main', 'logfile')
 pushover_url = th_config.get('main', 'pushover_url')
 logbook_url = th_config.get('main', 'logbook_url')
+interphone_url = th_config.get('main', 'interphone_url')
 # also: getfloat, getint, getboolean
 
 # log
@@ -56,23 +55,22 @@ log.warning(service_name+" is (re)starting !")
 # send a restart info to logbook
 requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "redémarrage"})
 
-# ZMQ init
-context = zmq.Context()
-# muta PUB channel
-socket_pub = context.socket(zmq.PUB)
-socket_pub.connect("tcp://bc-hq.local:5000")
-log.info("ZMQ connect: PUB on tcp://bc-hq.local:5000")
-
 # send a restart info on pushover
 # r = requests.get(pushover_url, params = {'text': "le service "+service_name+" a redémarré..."})
 
 # =======================================================
-# main loop
+# time announce job
 
 
 def job(h, m):
-    # send a test ZMQ request to interphone service
-    d_announce = {
+    announce = d_announce[h+m]
+    requests.get(interphone_url, params={'service': service_name, 'announce': announce})
+
+
+# =======================================================
+# main stuff
+
+d_announce = {
         "0000": "il est minuit!",
         "0015": "il est minuit et quart.",
         "0030": "il est minuit et demie.",
@@ -170,17 +168,6 @@ def job(h, m):
         "2330": "il est vingt-trois heures trente.",
         "2345": "il est vingt-trois heures quarante cinq."
     }
-    announce = d_announce[h+m]
-    data = umsgpack.packb([u"scheduler", announce])
-    socket_pub.send("%s %s" % ("basecamp.interphone.announce", data))
-    """
-    messagedata = umsgpack.packb(["scheduler", "Coucou! Ca va Nicolas?"])
-    print(type(messagedata))
-    test = "basecamp.interphone.announce "
-    test += messagedata.encode
-    socket_pub.send_string(test)
-    # socket_pub.send_string("%s %x" % ("basecamp.interphone.announce", messagedata))
-    """
 hours = []
 for hour in range(24):
     hours.append('{0:02d}'.format(hour))

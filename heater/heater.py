@@ -14,8 +14,8 @@ import logging.handlers
 import configparser
 import requests
 from threading import Timer
-import umsgpack
-import zmq
+# import umsgpack
+# import zmq
 import time
 import datetime
 from bottle import run, request, get
@@ -118,7 +118,7 @@ def timer_export_influxdb():
     t2.start()
 
 
-# ZMQ check + temp / relay update timer function
+# check temp update and determine relay output accordingly
 def check_temp_update():
     global socks
     global th_mode
@@ -130,114 +130,101 @@ def check_temp_update():
     global temp_conf
     global delta_temp_plus
     global delta_temp_minus
+
     try:
-        socks = dict(poller.poll(1000))
-    except zmq.ZMQError as e:
-        if e.errno != errno.EINTR:
-            raise
-    except KeyboardInterrupt:
-        exit(0)
+        payload = {'db': "basecamp", 'q': "SELECT LAST(\"Tmp\") FROM \"muta\" WHERE unit='salon'"}
+        r = requests.get(influxdb_query_url, params=payload)
+    except requests.exceptions.RequestException as e:
+        print(e.__str__())
+        log.error(e.__str__())
+        requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "ERREUR! problème d'accès influxdb!"})
+    else:
+        res = r.json()["results"][0]["series"][0]["values"][0]
+        timestamp = res[0]
+        temp_in = float(res[1])
+        log.info("input temperature (muta.salon.Tmp) updated to: %.2f°C @ %s" % (temp_in, str(timestamp)))
 
-    # a new ZMQ message is available
-    if socket_sub in socks and socks[socket_sub] == zmq.POLLIN:
-        m_str = socket_sub.recv()
-        (topic, messagedata) = m_str.split(' ', 1)
-        message = umsgpack.unpackb(messagedata, use_list=True)
-        # print message
-        # log.info("received ZMQ message on '%s': %s" % (topic, message))
-        if ((topic == "basecamp.muta.update") and (message[0] == "salon")):
-            m_dict = message[1]
-            temp_in = float(m_dict['Tmp'][:-1])
-            # print(temp_in)
-            # temp_in = float(temp_in.replace(',','.'))
-            log.info("input temperature (muta.salon.Tmp) updated to new value: %.2f°C" % temp_in)
-
-            # ------------------------------------------------------------------------------------------
-            # heating command update loop
-            need_influxdb_update = False
-            # check calendar & mode update
-            if (is_calendar_on_eco(calendrier)):
-                if (th_mode == ThMode.COMFORT):
-                    log.info("switching to ECO mode")
-                    th_mode = ThMode.ECO
-                    # log.debug("sending (ORDERS): basecamp_HQ_heater_info, {'mode':'ECO'}")
-                    # msg = msgpack.packb(["basecamp_HQ_heater_info","{'mode':'ECO'}"])
-                    # socket_orders.send(msg)
-                    # TODO: update influxdb with basecamp/heater/goal_temp = temp for ECO mode
-            else:
-                if (th_mode == ThMode.ECO):
-                    log.info("switching to COMFORT mode")
-                    th_mode = ThMode.COMFORT
-                    # log.debug("sending (ORDERS): basecamp_HQ_heater_info, {'mode':'COMFORT'}")
-                    # msg = msgpack.packb(["basecamp_HQ_heater_info","{'mode':'COMFORT'}"])
-                    # socket_orders.send(msg)
-                    # TODO: update influxdb with basecamp/heater/goal_temp = temp for ECO mode
-            # aimed and delta
+        # ------------------------------------------------------------------------------------------
+        # heating command update loop
+        need_influxdb_update = False
+        # check calendar & mode update
+        if (is_calendar_on_eco(calendrier)):
+            if (th_mode == ThMode.COMFORT):
+                log.info("switching to ECO mode")
+                th_mode = ThMode.ECO
+                # log.debug("sending (ORDERS): basecamp_HQ_heater_info, {'mode':'ECO'}")
+                # msg = msgpack.packb(["basecamp_HQ_heater_info","{'mode':'ECO'}"])
+                # socket_orders.send(msg)
+                # TODO: update influxdb with basecamp/heater/goal_temp = temp for ECO mode
+        else:
             if (th_mode == ThMode.ECO):
-                new_aimed_temp = float(temp_eco)
+                log.info("switching to COMFORT mode")
+                th_mode = ThMode.COMFORT
+                # log.debug("sending (ORDERS): basecamp_HQ_heater_info, {'mode':'COMFORT'}")
+                # msg = msgpack.packb(["basecamp_HQ_heater_info","{'mode':'COMFORT'}"])
+                # socket_orders.send(msg)
+                # TODO: update influxdb with basecamp/heater/goal_temp = temp for ECO mode
+        # aimed and delta
+        if (th_mode == ThMode.ECO):
+            new_aimed_temp = float(temp_eco)
+        else:
+            new_aimed_temp = float(temp_conf)
+        if (new_aimed_temp != aimed_temp):
+            aimed_temp = new_aimed_temp
+            need_influxdb_update = True
+
+        log.info("aimed_temp=%.2f, relay=%i" % (aimed_temp, relay_out))
+
+        # hystheresis
+        if (float(temp_in) >= (aimed_temp+float(delta_temp_plus)) and (relay_out == 1)):
+            # stop the heater
+            log.info("therm: %.2f reached (%.2f max, %.2f aimed), stopping the heater" % (float(temp_in), (aimed_temp+float(delta_temp_plus)), float(aimed_temp)))
+            # switch using GPIO + check with probe
+            log.info("resetting the heater relay")
+            GPIO.output(reset, 1)
+            time.sleep(0.02)
+            GPIO.output(reset, 0)
+            if GPIO.input(probe):
+                log.info("relay probe is HIGH")
+                # alarm if probe is not LOW
+                log.error("unable to reset heater relay, stopping here")
+                requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "ERREUR! impossible d'ouvrir le relais!"})
+                exit(1)
             else:
-                new_aimed_temp = float(temp_conf)
-            if (new_aimed_temp != aimed_temp):
-                aimed_temp = new_aimed_temp
-                need_influxdb_update = True
+                log.info("heater latching relay is OFF")
+            # send alarm if probe not ok
+            relay_out = 0
+            need_influxdb_update = True
+            # log.debug("sending (ORDERS): ozw_operator_heater_command, {'relais_chaudiere':'False'}")
+            # msg = msgpack.packb(["ozw_operator_heater_command","{'relais_chaudiere':'False'}"])
+            # socket_orders.send(msg)
+        elif ((float(temp_in) <= (aimed_temp-float(delta_temp_minus))) and (relay_out == 0)):
+            # start the heater
+            log.info("therm: %.2f reached (%.2f min, %.2f aimed), starting the heater" % (float(temp_in), (float(aimed_temp)-float(delta_temp_minus)), float(aimed_temp)))
+            # switch using GPIO + check with probe
+            log.info("setting the heater relay")
+            GPIO.output(set, 1)
+            time.sleep(0.02)
+            GPIO.output(set, 0)
+            if GPIO.input(probe):
+                log.info("heater latching relay is ON")
+            else:
+                log.info("relay probe is LOW")
+                # alarm if probe is not HIGH
+                log.error("unable to set heater relay, stopping here")
+                requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "ERREUR! impossible de fermer le relais!"})
+                exit(1)
+            # send alarm if probe not ok
+            relay_out = 1
+            need_influxdb_update = True
+            # log.debug("sending (ORDERS): ozw_operator_heater_command, {'relais_chaudiere':'True'}")
+            # msg = msgpack.packb(["ozw_operator_heater_command","{'relais_chaudiere':'True'}"])
+            # socket_orders.send(msg)
+        if need_influxdb_update is True:
+            export_to_influxdb()
+        # ------------------------------------------------------------------------------------------
 
-            log.info("aimed_temp=%.2f, relay=%i" % (aimed_temp, relay_out))
-
-            # hystheresis
-            if (float(temp_in) >= (aimed_temp+float(delta_temp_plus)) and (relay_out == 1)):
-                # stop the heater
-                log.info("therm: %.2f reached (%.2f max, %.2f aimed), stopping the heater" % (float(temp_in), (aimed_temp+float(delta_temp_plus)), float(aimed_temp)))
-                # switch using GPIO + check with probe
-                log.info("resetting the heater relay")
-                GPIO.output(reset, 1)
-                time.sleep(0.02)
-                GPIO.output(reset, 0)
-                if GPIO.input(probe):
-                    log.info("relay probe is HIGH")
-                    # alarm if probe is not LOW
-                    log.error("unable to reset heater relay, stopping here")
-                    requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "ERREUR! impossible d'ouvrir le relais!"})
-                    exit(1)
-                else:
-                    log.info("heater latching relay is OFF")
-                # send alarm if probe not ok
-                relay_out = 0
-                need_influxdb_update = True
-                # log.debug("sending (ORDERS): ozw_operator_heater_command, {'relais_chaudiere':'False'}")
-                # msg = msgpack.packb(["ozw_operator_heater_command","{'relais_chaudiere':'False'}"])
-                # socket_orders.send(msg)
-            elif ((float(temp_in) <= (aimed_temp-float(delta_temp_minus))) and (relay_out == 0)):
-                # start the heater
-                log.info("therm: %.2f reached (%.2f min, %.2f aimed), starting the heater" % (float(temp_in), (float(aimed_temp)-float(delta_temp_minus)), float(aimed_temp)))
-                # switch using GPIO + check with probe
-                log.info("setting the heater relay")
-                GPIO.output(set, 1)
-                time.sleep(0.02)
-                GPIO.output(set, 0)
-                if GPIO.input(probe):
-                    log.info("heater latching relay is ON")
-                else:
-                    log.info("relay probe is LOW")
-                    # alarm if probe is not HIGH
-                    log.error("unable to set heater relay, stopping here")
-                    requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "ERREUR! impossible de fermer le relais!"})
-                    exit(1)
-                # send alarm if probe not ok
-                relay_out = 1
-                need_influxdb_update = True
-                # log.debug("sending (ORDERS): ozw_operator_heater_command, {'relais_chaudiere':'True'}")
-                # msg = msgpack.packb(["ozw_operator_heater_command","{'relais_chaudiere':'True'}"])
-                # socket_orders.send(msg)
-            if need_influxdb_update is True:
-                export_to_influxdb()
-            # ------------------------------------------------------------------------------------------
-
-        # else:
-        #     print("=>ignored.")
-        # for item in message:
-        #    print("\t%s" % item)
-
-    t = Timer(1.0, check_temp_update)
+    t = Timer(30, check_temp_update)
     t.start()
 
 
@@ -262,7 +249,7 @@ def do_status():
     else:
         str_mode = "CONFORT"
     status = {'profile': profile, 'profile_list': profile_list, 'temp_in': temp_in, 'relay_out': relay_out,
-              'th_mode': str_mode, 'temp_eco': temp_eco, 'temp_conf': temp_conf, 'aimed_temp': aimed_temp, }
+              'th_mode': str_mode, 'temp_eco': temp_eco, 'temp_conf': temp_conf, 'aimed_temp': aimed_temp}
     return(status)
 
 
@@ -301,6 +288,7 @@ hostname = th_config.get('main', 'hostname')
 port = th_config.getint('main', 'port')
 influxdb_host = th_config.get("influxdb", "influxdb_host")
 influxdb_port = th_config.get("influxdb", "influxdb_port")
+influxdb_query_url = "http://"+influxdb_host+":"+influxdb_port+"/query"
 # also: getfloat, getint, getboolean
 
 # log
@@ -410,6 +398,7 @@ else:
     log.info("heater latching relay is OFF")
 relay_out = 0
 
+"""
 # ZMQ init
 context = zmq.Context()
 # muta PUB channel
@@ -426,11 +415,10 @@ log.debug("ZMQ connect: SUB on tcp://192.168.1.50:5001")
 time.sleep(1)
 poller = zmq.Poller()
 poller.register(socket_sub, zmq.POLLIN)
+"""
 
 # =======================================================
 # main loop
-
-# TODO: use scheduler to send regularly the aimed_temp+relay_out values to influxdb
 
 t = Timer(1.0, check_temp_update)
 t.start()

@@ -1,6 +1,11 @@
 #!/usr/bin/python
-# encoding:utf-8
+# -*- coding: utf-8 -*-
 
+"""
+veilleuse service
+
+(python2.7/python3 compatible)
+"""
 
 import CHIP_IO.GPIO as GPIO
 from time import sleep
@@ -8,8 +13,6 @@ import logging
 import logging.handlers
 import configparser
 import requests
-import umsgpack
-import zmq
 import re
 import sys
 import socket
@@ -31,6 +34,7 @@ logbook_url = th_config.get('main', 'logbook_url')
 thresh_low = th_config.getint('main', 'thresh_low')
 thresh_high = th_config.getint('main', 'thresh_high')
 influxdb_query_url = th_config.get('main', 'influxdb_query_url')
+interphone_url = th_config.get('main', 'interphone_url')
 # also: getfloat, getint, getboolean
 
 # log
@@ -52,12 +56,6 @@ log.addHandler(fh)
 log.addHandler(ch)
 
 log.warning(service_name+" is (re)starting !")
-
-# ZMQ init
-context = zmq.Context()
-# muta PUB channel
-socket_pub = context.socket(zmq.PUB)
-socket_pub.connect("tcp://192.168.1.50:5000")
 
 # brings an error! :(
 # GPIO.cleanup()
@@ -110,8 +108,7 @@ while True:
                 log.info("lights are OFF")
                 # r = requests.get(pushover_url, params={'text': "le service "+service_name+" a éteint la veilleuse"})
                 requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "extinction de la veilleuse"})
-                data = umsgpack.packb([u"veilleuse", u"Il y a suffisamment de luminosité dehors, j'ai éteind la veilleuse."])
-                socket_pub.send("%s %s" % ("basecamp.interphone.announce", data))
+                requests.get(interphone_url, params={'service': service_name, 'announce': "Extinction de la veilleuse lumineuse"})
                 current_state = 0
         elif (current_state == 0) and (light_value < thresh_low):
             # lights should be ON
@@ -124,8 +121,7 @@ while True:
                 log.info("lights are ON")
                 # r = requests.get(pushover_url, params={'text': "le service "+service_name+" a allumé la veilleuse"})
                 requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "allumage de la veilleuse"})
-                data = umsgpack.packb([u"veilleuse", u"Il fait un peu trop sombre dehors, j'ai allumé la veilleuse."])
-                socket_pub.send("%s %s" % ("basecamp.interphone.announce", data))
+                requests.get(interphone_url, params={'service': service_name, 'announce': "Allumage de la veilleuse lumineuse"})
                 current_state = 1
             else:
                 log.error("lights are OFF, but they shouldn't be!")

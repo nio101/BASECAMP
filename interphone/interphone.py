@@ -4,23 +4,122 @@
 """
 interphone service
 
-(python2 ONLY - due to ZMQ/msgpack unicode handling)
+(python2.7/python3 compatible)
 """
-
 
 import logging
 import logging.handlers
 import configparser
 import requests
-import umsgpack
-import zmq
-import time
 import os
 from subprocess import call
-import datetime
 import re
 import sys
 import socket
+from datetime import datetime
+from bottle import run, request, get
+import uuid
+
+
+# =======================================================
+# helpers
+
+def download_file(url):
+    # local_filename = url.split('/')[-1]
+    local_filename = "last_announce.wav"
+    # NOTE the stream=True parameter
+    r = requests.get(url, stream=True)
+    with open(local_filename, 'wb') as f:
+        for chunk in r.iter_content(chunk_size=1024):
+            if chunk:  # filter out keep-alive new chunks
+                f.write(chunk)
+    return local_filename
+
+# =======================================================
+# HTTP requests
+
+
+@get('/alive')
+def do_alive():
+    return "OK"
+
+
+@get('/lock')
+def do_lock():
+    global key
+    global key_ts
+    global key_service
+    if request.query.service == "":
+        return("ERROR: must provide a service name/id")
+    now = datetime.now()
+    if ((now-key_ts).total_seconds() > keys_lifespan):
+        key = ""
+    if (key == ""):
+        key = uuid.uuid4().hex
+        key_ts = datetime.now()
+        key_service = request.query.service
+        result = {'key': key}
+        log.info("%s: key=%s" % (key_service, key))
+        return(result)
+    else:
+        return("ERROR: interphone already locked by service "+key_service)
+
+
+@get('/release')
+def do_release():
+    global key
+    global key_ts
+    global key_service
+    if request.query.service == "":
+        return("ERROR: must provide a service name/id")
+    if request.query.service != key_service:
+        return("ERROR: service name/id doesn't match")
+    key = ""
+    key_service = ""
+    log.info("%s: key released" % (key_service))
+    return("OK")
+
+
+@get('/announce')
+def do_set_profile():
+    global key
+    service = request.query.service
+    announce = request.query.announce
+    m_key = request.query.key
+
+    log.info("%s (key=%s): %s" % (service, m_key, announce))
+
+    now = datetime.now()
+    if ((now-key_ts).total_seconds() > keys_lifespan):
+        key = ""
+    if (m_key != key):
+        return("ERROR: key is missing, or invalid/expired")
+
+    # request TTS wav file
+    r = requests.get(tts_url, params = {'text': announce}, stream=True)
+    if r.status_code==200:
+        wav_url = r.text
+        # download wav file
+        local_wav = download_file(wav_url)
+        call(["sox", local_wav, "announce_plus_contrast.wav", "contrast"])
+        # play wav file
+        
+        # volume = 70
+        # call(["amixer", "-D", "pulse", "sset", "Master", str(volume)+"%"])
+        if (now.hour >= 7) and (now.hour <= 23):
+            vol1 = "50%"
+        else:
+            vol1 = "35%"
+        call(["amixer", "-D", "pulse", "sset", "Master", vol1])
+        os.system("aplay codeccall.wav")
+        os.system("aplay codecopen.wav")
+        os.system("aplay announce_plus_contrast.wav")
+        os.system("aplay codecover.wav")
+        # remove the file
+        os.remove(local_wav)
+        return("OK")
+    else:
+        return("ERROR getting the TTS file from "+tts_url)
 
 
 # =======================================================
@@ -35,6 +134,9 @@ logfile = th_config.get('main', 'logfile')
 pushover_url = th_config.get('main', 'pushover_url')
 logbook_url = th_config.get('main', 'logbook_url')
 tts_url = th_config.get('main', 'tts_url')
+keys_lifespan = th_config.getint('http', 'lifespan')
+hostname = th_config.get('http', 'hostname')
+port = th_config.getint('http', 'port')
 # also: getfloat, getint, getboolean
 
 # log
@@ -59,81 +161,9 @@ log.warning(service_name+" is (re)starting !")
 # send a restart info to logbook
 requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "redémarrage"})
 
-# ZMQ init
-context = zmq.Context()
-# muta PUB channel
-socket_pub = context.socket(zmq.PUB)
-socket_pub.connect("tcp://192.168.1.50:5000")
-log.info("ZMQ connect: PUB on tcp://192.168.1.50:5000")
-# muta SUB channel
-socket_sub = context.socket(zmq.SUB)
-socket_sub.connect("tcp://192.168.1.50:5001")
-topicfilter = "basecamp.interphone.announce"
-socket_sub.setsockopt(zmq.SUBSCRIBE, topicfilter)
-log.debug("ZMQ connect: SUB on tcp://192.168.1.50:5001")
-# give ZMQ some time to setup the channels
-time.sleep(1)
-poller = zmq.Poller()
-poller.register(socket_sub, zmq.POLLIN)
-
 # =======================================================
-# helpers
-
-def download_file(url):
-    #local_filename = url.split('/')[-1]
-    local_filename = "last_announce.wav"
-    # NOTE the stream=True parameter
-    r = requests.get(url, stream=True)
-    with open(local_filename, 'wb') as f:
-        for chunk in r.iter_content(chunk_size=1024): 
-            if chunk: # filter out keep-alive new chunks
-                f.write(chunk)
-    return local_filename
-
-# =======================================================
-# main loop
-
-# scan ZMQ for incoming interphone requests
-should_continue = True
-while should_continue is True:
-    try:
-        # ! try different sleep value to decrease the CPU load !
-        time.sleep(2)
-        socks = dict(poller.poll(0))
-    except zmq.ZMQError as e:
-        if e.errno == errno.EINTR:
-            continue
-        else:
-            raise
-    except KeyboardInterrupt:
-        should_continue = False
-    if socket_sub in socks and socks[socket_sub] == zmq.POLLIN:
-        # new message incoming
-        raw_msg = socket_sub.recv()
-        topic, messagedata = raw_msg.split(' ', 1)
-        (service, announce) = umsgpack.unpackb(messagedata, use_list=True)
-        log.info('%s/%s: %s' % (topic, service, announce))
-        # request TTS wav file
-        r = requests.get(tts_url, params = {'text': announce}, stream=True)
-        if r.status_code==200:
-            wav_url = r.text
-            print(wav_url)
-            # download wav file
-            local_wav = download_file(wav_url)
-            call(["sox", local_wav, "announce_plus_contrast.wav", "contrast"])
-            # play wav file
-            # volume = 70
-            # call(["amixer", "-D", "pulse", "sset", "Master", str(volume)+"%"])
-            now = datetime.datetime.now()
-            if (now.hour >= 7) and (now.hour <= 23):
-                vol1 = "50%"
-                call(["amixer", "-D", "pulse", "sset", "Master", vol1])
-                os.system("aplay codeccall.wav")
-                os.system("aplay codecopen.wav")
-                os.system("aplay announce_plus_contrast.wav")
-                os.system("aplay codecover.wav")
-                # remove the file
-                os.remove(local_wav)
-        else:
-            print("ERROR")
-        # could perform snowbow hotword reco too ?
+# main stuff
+key = ""
+key_ts = datetime.now()
+key_service = ""
+run(host=hostname, port=port)
