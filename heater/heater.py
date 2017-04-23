@@ -138,6 +138,10 @@ def check_temp_update():
         print(e.__str__())
         log.error(e.__str__())
         requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "ERREUR! problème d'accès influxdb!"})
+    except:
+        print("Unexpected error:", sys.exc_info()[0])
+        log.error("Unexpected error:"+sys.exc_info()[0])
+        requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "ERREUR! problème d'accès influxdb!"})
     else:
         res = r.json()["results"][0]["series"][0]["values"][0]
         timestamp = res[0]
