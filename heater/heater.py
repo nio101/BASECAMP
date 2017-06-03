@@ -113,9 +113,9 @@ def export_to_influxdb():
 # =======================================================
 # influxdb export timer function - every 5mn
 def timer_export_influxdb():
-    export_to_influxdb()
     t2 = Timer(5*60.0, timer_export_influxdb)
     t2.start()
+    export_to_influxdb()
 
 
 # check temp update and determine relay output accordingly
@@ -131,10 +131,13 @@ def check_temp_update():
     global delta_temp_plus
     global delta_temp_minus
 
+    t = Timer(30, check_temp_update)
+    t.start()
+
     try:
         payload = {'db': "basecamp", 'q': "SELECT LAST(\"Tmp\") FROM \"muta\" WHERE unit='salon'"}
         r = requests.get(influxdb_query_url, params=payload)
-    except requests.exceptions.RequestException as e:
+    except (requests.exceptions.RequestException, requests.exceptions.ConnectionError) as e:
         print(e.__str__())
         log.error(e.__str__())
         requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "ERREUR! problème d'accès influxdb!"})
@@ -227,9 +230,6 @@ def check_temp_update():
         if need_influxdb_update is True:
             export_to_influxdb()
         # ------------------------------------------------------------------------------------------
-
-    t = Timer(30, check_temp_update)
-    t.start()
 
 
 @get('/alive')

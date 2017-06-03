@@ -4,6 +4,7 @@
 
 Pour bc-watch, bc-hq et bc-annex:
 
+- [ ] mettre des temporisations au début des scripts pour water+SMS, pour laisser le temps de monter le réseau (wifi pour l'un, SMS pour l'autre), et augmenter les retries dans supervisord.conf
 - [ ] mettre une clé privée/publique sur bc-watch pour faire des ssh sur les autres machines (reboot & autres?)?
 - [ ] Tablette en veille quand absent ou dort, allumée sinon comme cadre photo avec flickr-groupe chouette du japon! le tout par
 - [ ] mettre le début du chauffage à 6h30 le matin
@@ -23,8 +24,10 @@ Pour bc-watch, bc-hq et bc-annex:
 - [ ] faire un schéma ppt pour savoir qui utilise zmq, et qui utilise http
 - [ ] décaler dans le temps le démarrage de ZMQ et des autres services => configuration supervisord
 - [ ] watch: ajouter un check quotidien qui scanne la consommation d'eau à l'heure et qui vérifie qu'elle a été nulle au moins une fois sur les dernières 24h => détection fuite d'eau!
+- [ ] watch: check de la dernière MAJ des capteurs MUTA... si > 15mn, par exemple => alarme (monter à 30mn au besoin)
 - [ ] vérifier le statut du wifi et du bluetooth sur chaque device + fermer là où c'est attendu + check reboot-proof.
 - [x] archiver zmq forwarder & virer l'usage de ZMQ: operator, heater, interphone (+veilleuse+scheduler). Interphone: http, heater: scan influxdb régulier (30sec), operator: influxdb en sortie, désactiver l'entrée pour l'instant. Mécanisme IPC
+- [ ] quand il se passe ça: `requests.exceptions.ConnectionError: ('Connection aborted.', OSError(101, 'Network is unreachable'))`, le script doit quitter en erreur (exit(x)) et laisser supervisor relancer/prendre une décision/alerter
 
 ## Basecamp UI
 
@@ -96,7 +99,7 @@ Each service automatically (re)started by supervisord should also send a notific
 + purpose: send SMS notifications + receive SMS from outside
 + machine: bc-watch
 + interface: HTTP, port:8081
-  + http://192.168.1.54:8081/send_SMS?text=héhé => OK
+  + http://192.168.1.54:8081/send_SMS?msisdn=0607147946&text=héhé => OK
   + http://192.168.1.54:8081/alive => OK
 + if an incoming SMS is detected, its content is broadcasted on Basecamp's PUB ZMQ channel with the topic _basecamp.SMS.incoming_
 

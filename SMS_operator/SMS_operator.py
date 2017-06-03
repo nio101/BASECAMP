@@ -133,9 +133,11 @@ def send_SMS():
     message = {'Text': uni_text, 'SMSC': {'Location': 1}, 'Number': msisdn}
     try:
         sm.SendSMS(message)
-        requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "SMS envoyé à "+msisdn})
+        requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "SMS envoyé à "+str(msisdn)})
         return("OK")
-    except:
+    except Exception as e:
+        print(e.__str__())
+        log.error(e)
         log.error("error sending SMS to %s: '%s'" % (msisdn, uni_text))
         requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "ERREUR! échec de l'envoi du SMS à "+msisdn})
         return("ERROR")
