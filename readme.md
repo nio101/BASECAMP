@@ -2,6 +2,8 @@
 
 ## Todo
 
+hehe
+
 Pour bc-watch, bc-hq et bc-annex:
 
 - [ ] mettre des temporisations au début des scripts pour water+SMS, pour laisser le temps de monter le réseau (wifi pour l'un, SMS pour l'autre), et augmenter les retries dans supervisord.conf
