@@ -4,6 +4,7 @@
 
 Pour bc-watch, bc-hq et bc-annex:
 
+- [ ] faire un script de déploiement automatisé des scripts python + fichiers .ini - utiliser fichier de config générique avec machine/path_dest. Garder des fichiers .ini génériques avec chaque module, et une instanciation perso ignorée par git.
 - [ ] mettre des temporisations au début des scripts pour water+SMS, pour laisser le temps de monter le réseau (wifi pour l'un, SMS pour l'autre), et augmenter les retries dans supervisord.conf
 - [ ] mettre une clé privée/publique sur bc-watch pour faire des ssh sur les autres machines (reboot & autres?)?
 - [ ] Tablette en veille quand absent ou dort, allumée sinon comme cadre photo avec flickr-groupe chouette du japon! le tout par
