@@ -4,10 +4,10 @@
 
 Pour bc-watch, bc-hq et bc-annex:
 
-- [ ] faire un script de déploiement automatisé des scripts python + fichiers .ini - utiliser fichier de config générique avec machine/path_dest. Garder des fichiers .ini génériques avec chaque module, et une instanciation perso ignorée par git.
+- [ ] faire un script qui récupère les .ini déployés dans _my_very_own_files_ gitignoré + un autre script de déploiement automatisé des scripts python + fichiers .ini perso - utiliser fichier de config générique avec machine/path_dest. Garder des fichiers .ini génériques avec chaque module, et une instanciation perso ignorée par git.
 - [ ] mettre des temporisations au début des scripts pour water+SMS, pour laisser le temps de monter le réseau (wifi pour l'un, SMS pour l'autre), et augmenter les retries dans supervisord.conf
 - [ ] mettre une clé privée/publique sur bc-watch pour faire des ssh sur les autres machines (reboot & autres?)?
-- [ ] Tablette en veille quand absent ou dort, allumée sinon comme cadre photo avec flickr-groupe chouette du japon! le tout par
+- [ ] Tablette en veille quand absent ou dort, allumée sinon comme cadre photo avec flickr-groupe chouette du japon! le tout par... ???
 - [ ] mettre le début du chauffage à 6h30 le matin
 - [ ] ajouter alarme quand heater ne recoit pas d'update de température du salon depuis X minutes (avec reset)
 - [ ] quand coupure de courant, si bc-watch pas accessible, les autres services ne démarrent pas (logbook pas accessible => erreur). => fiabiliser watch 
