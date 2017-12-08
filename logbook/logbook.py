@@ -11,7 +11,7 @@ note:   webserver may not be multi-threaded/non-blocking.
         if needed, use bottle with gunicorn for example.
 """
 
-
+import bottle
 from bottle import run, request, get
 import logging
 import logging.handlers
@@ -26,7 +26,8 @@ import requests
 
 # =======================================================
 # init
-service_name = re.search("([^\/]*)\.py", sys.argv[0]).group(1)
+#service_name = re.search("([^\/]*)\.py", sys.argv[0]).group(1)
+service_name = "logbook"
 machine_name = socket.gethostname()
 
 # .ini
@@ -38,6 +39,8 @@ port = th_config.getint('main', 'port')
 pushover_url = th_config.get('main', 'pushover_url')
 sms_url = th_config.get('main', 'sms_url')
 admin_msisdn = th_config.get('main', 'admin_msisdn')
+pushover_timeout = th_config.getint('main', 'pushover_timeout')
+sms_timeout = th_config.getint('main', 'sms_timeout')
 influxdb_host = th_config.get("influxdb", "influxdb_host")
 influxdb_port = th_config.get("influxdb", "influxdb_port")
 # also: getfloat, getint, getboolean
@@ -92,7 +95,7 @@ def add_to_influxdb(log_type, machine, service, message):
         log.error(e)
         log.error("ERROR reaching infludb on "+str(influxdb_host)+":"+str(influxdb_port))
         log.error("WARNING [%s] [%s] : redémarrage" % (machine_name, service_name))
-        requests.get(sms_url, params={'msisdn': admin_msisdn, 'text': "ERREUR! impossible d'accéder à influxdb!"})
+        requests.get(sms_url, params={'msisdn': admin_msisdn, 'text': "ERREUR! impossible d'accéder à influxdb!"}, timeout=sms_timeout)
 
 
 # =======================================================
@@ -121,9 +124,9 @@ def do_add():
     log.info("%s [%s] [%s] : %s" % (log_type, machine, service, message))
     if (log_type != "DEBUG"):
         add_to_influxdb(log_type, machine, service, message)
-        requests.get(pushover_url, params={'text': "%s [%s] [%s] : %s" % (log_type, machine, service, message)})
+        requests.get(pushover_url, params={'text': "%s [%s] [%s] : %s" % (log_type, machine, service, message)}, timeout=pushover_timeout)
         if (log_type == "ALARM"):
-            requests.get(sms_url, params={'msisdn': admin_msisdn, 'text': "%s [%s] [%s] : %s" % (log_type, machine, service, message)})
+            requests.get(sms_url, params={'msisdn': admin_msisdn, 'text': "%s [%s] [%s] : %s" % (log_type, machine, service, message)}, timeout=sms_timeout)
     return "OK"
 
 
@@ -145,4 +148,4 @@ def do_get():
 # =======================================================
 # main loop
 
-run(host=hostname, port=port)
+run(host=hostname, port=port, server='gunicorn', workers=2)
