@@ -5,6 +5,7 @@
 Pour bc-watch, bc-hq et bc-annex:
 
 - [ ] faire un script qui récupère les .ini déployés dans _my_very_own_files_ gitignoré + un autre script de déploiement automatisé des scripts python + fichiers .ini perso - utiliser fichier de config générique avec machine/path_dest. Garder des fichiers .ini génériques avec chaque module, et une instanciation perso ignorée par git.
+
 - [ ] mettre des temporisations au début des scripts pour water+SMS, pour laisser le temps de monter le réseau (wifi pour l'un, SMS pour l'autre), et augmenter les retries dans supervisord.conf
 - [ ] mettre une clé privée/publique sur bc-watch pour faire des ssh sur les autres machines (reboot & autres?)?
 - [ ] Tablette en veille quand absent ou dort, allumée sinon comme cadre photo avec flickr-groupe chouette du japon! le tout par... ???
@@ -106,7 +107,7 @@ Each service automatically (re)started by supervisord should also send a notific
 
 ### veilleuse **[DONE]**
 + purpose: turn ON/OFF some night lights based on the outdoor light level, as measured by MUTA scout units
-+ machine: bc-presence
++ machine: bc-veilleuse
 + when the outdoor light level rises/falls above/under a light threshold, a latching relay is activated to turn OFF/ON night lights.
 
 ### heater **[DONE]**
@@ -185,7 +186,7 @@ Many services are set on many machines. Complex interactions between them are do
   * bonjour: bc-hq.local
   * fixed IP: 192.168.1.50
 
-* `bc-annex` (win7 on old Atom, remote desktop/Nomachine bc-watch.local, UP) mainly hosts the windows-based SAPI5 synthesis, and the **interphone** server module. It also host some periodical scraping / transcoding tasks (video feeds), and some scraping about the weather forecast. It is powered by an old **Atom** motherboard, under **windows 7**.
+* `bc-annex` (win7 on old Atom, remote desktop/Nomachine bc-watch.local, UP) mainly hosts the windows-based SAPI5 synthesis, and the **interphone** server module. It MAY also host some periodical scraping / transcoding tasks (video feeds), and some scraping about the weather forecast. It is powered by an old **Atom** motherboard, under **windows 7**.
   * bonjour: bc-annex.local
   * fixed IP: 192.168.1.55
 
@@ -193,11 +194,11 @@ Many services are set on many machines. Complex interactions between them are do
   * bonjour: bc-watch.local
   * fixed IP: 192.168.1.54
 
-* `bc-presence` (Debian Jessi on CHIP, ssh chip@bc-presence.local, UP) is the presence module, located near the bc-ui unit, that will:
+* `bc-veilleuse` (Debian Jessi on CHIP, ssh chip@bc-veilleuse.local, UP) is the veilleuse module, located near the bc-ui unit, that will:
   + detect any nearby presence using PIR sensors, and then wake up the bc-ui from screensaver, to let the user see the dashboard slideshow/clock (+ update the presence if required, or set an alarm if _lockout_ state)
   + monitor the outdoor luminosity to turn on/off the night led lights in the living room
   + scan regularly via bluetooth to check if the Galaxy A5 is detected nearby, and set the presence variable accordingly (disable _lockout_, greets & report)
-    * bonjour: bc-presence.local
+    * bonjour: bc-veilleuse.local
     * fixed IP: 192.168.1.53
   
 * `bc-power` (Raspbian on RPi1, ssh nio@bc-power.local, UP) is the module located near the house heater and main power metering unit, that will:

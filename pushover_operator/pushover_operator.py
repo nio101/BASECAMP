@@ -4,6 +4,8 @@
 """
 Basecamp pushover notification service
 
+dependencies: logbook
+
 (python2/python3 compatible)
 note:   webserver may not be multi-threaded/non-blocking.
         if needed, use bottle with gunicorn for example.
@@ -18,6 +20,7 @@ import requests
 import re
 import sys
 import socket
+import time
 
 
 # =======================================================
@@ -34,6 +37,7 @@ port = th_config.getint('main', 'port')
 app_token = th_config.get('main', 'app_token')
 user_token = th_config.get('main', 'user_token')
 logbook_url = th_config.get('main', 'logbook_url')
+wait_at_startup = th_config.getint('main', 'wait_at_startup')
 # also: getfloat, getint, getboolean
 
 # log
@@ -55,9 +59,8 @@ log.addHandler(fh)
 log.addHandler(ch)
 
 log.warning(service_name+" is (re)starting !")
-
-# send a restart info to logbook
-requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "redémarrage"})
+time.sleep(wait_at_startup)
+requests.get(logbook_url, params={'log_type': "WARNING", 'machine': machine_name, 'service': service_name, 'message': "redémarrage"})
 
 # =======================================================
 # URL handlers

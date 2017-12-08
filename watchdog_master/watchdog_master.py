@@ -4,6 +4,8 @@
 """
 watchdog_master
 
+dependencies: all other modules! :s
+
 (python2/python3 compatible)
 """
 
@@ -42,8 +44,8 @@ machine_name = socket.gethostname()
 th_config = configparser.ConfigParser()
 th_config.read(service_name+".ini")
 logfile = th_config.get('main', 'logfile')
-pushover_url = th_config.get('main', 'pushover_url')
 logbook_url = th_config.get('main', 'logbook_url')
+wait_at_startup = th_config.getint('main', 'wait_at_startup')
 # also: getfloat, getint, getboolean
 
 # log
@@ -60,6 +62,7 @@ fh.setFormatter(formatter)
 log.addHandler(fh)
 
 log.warning(service_name+" is (re)starting !")
+time.sleep(wait_at_startup)
 
 # ZMQ init
 context = zmq.Context()

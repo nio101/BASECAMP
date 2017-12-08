@@ -1,10 +1,12 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # coding: utf-8
 
 """
 Basecamp logbook service
 
-(python2/python3 compatible)
+dependencies: pushover, SMS, influxdb
+
+(python3 compatible)
 note:   webserver may not be multi-threaded/non-blocking.
         if needed, use bottle with gunicorn for example.
 """
@@ -17,6 +19,9 @@ import configparser
 import re
 import sys
 import socket
+from influxdb import InfluxDBClient
+import datetime
+import requests
 
 
 # =======================================================
@@ -30,6 +35,11 @@ th_config.read(service_name+".ini")
 logfile = th_config.get('main', 'logfile')
 hostname = th_config.get('main', 'hostname')
 port = th_config.getint('main', 'port')
+pushover_url = th_config.get('main', 'pushover_url')
+sms_url = th_config.get('main', 'sms_url')
+admin_msisdn = th_config.get('main', 'admin_msisdn')
+influxdb_host = th_config.get("influxdb", "influxdb_host")
+influxdb_port = th_config.get("influxdb", "influxdb_port")
 # also: getfloat, getint, getboolean
 
 # log
@@ -42,15 +52,48 @@ fh.setLevel(logging.DEBUG)
 ch = logging.StreamHandler()
 ch.setLevel(logging.INFO)
 # create formatter and add it to the handlers
-formatter = logging.Formatter('%(asctime)s - [%(name)s] %(levelname)s: %(message)s')
+# formatter = logging.Formatter('%(asctime)s - [%(name)s] %(levelname)s: %(message)s')
+formatter = logging.Formatter('%(asctime)s - %(message)s')
 fh.setFormatter(formatter)
 ch.setFormatter(formatter)
 # add the handlers to the logger
 log.addHandler(fh)
 log.addHandler(ch)
 
+# influxdb init
+client = InfluxDBClient(influxdb_host, influxdb_port)
+client.switch_database('basecamp')
+log.info("influxdb will be contacted on "+str(influxdb_host)+":"+str(influxdb_port))
+influx_json_body = [
+    {
+        "measurement": "logs",
+        "tags": {},
+        "time": "",
+        "fields": {}
+    }
+]
+
 # add its own restart info
-log.info("[%s] [%s] : redémarrage" % ("bc-watch", service_name))
+log.info("WARNING [%s] [%s] : redémarrage" % (machine_name, service_name))
+
+# =======================================================
+# Helpers
+
+
+def add_to_influxdb(log_type, machine, service, message):
+    influx_json_body[0]['time'] = datetime.datetime.utcnow().isoformat()
+    influx_json_body[0]['fields'] = {'details': message}
+    influx_json_body[0]['tags'] = {'type': log_type, 'service': service, 'machine': machine}
+    # log.info("writing to influxdb: "+str(influx_json_body))
+    try:
+        client.write_points(influx_json_body)
+    except Exception as e:
+        print(e.__str__())
+        log.error(e)
+        log.error("ERROR reaching infludb on "+str(influxdb_host)+":"+str(influxdb_port))
+        log.error("WARNING [%s] [%s] : redémarrage" % (machine_name, service_name))
+        requests.get(sms_url, params={'msisdn': admin_msisdn, 'text': "ERREUR! impossible d'accéder à influxdb!"})
+
 
 # =======================================================
 # URL handlers
@@ -63,10 +106,24 @@ def do_alive():
 
 @get('/add_to_logbook')
 def do_add():
+    log_type = request.query.log_type
+    if log_type not in ["DEBUG", "WARNING", "INFO", "ERROR", "ALARM"]:
+        return "ERROR: log_type not in [DEBUG,WARNING,INFO,ERROR,ALARM]!"
     machine = request.query.machine
+    if machine is None:
+        return "ERROR: machine field should NOT be None"
     service = request.query.service
+    if service is None:
+        return "ERROR: service field should NOT be None"
     message = request.query.message
-    log.info("[%s] [%s] : %s" % (machine, service, message))
+    if message is None:
+        return "ERROR: message field should NOT be None"
+    log.info("%s [%s] [%s] : %s" % (log_type, machine, service, message))
+    if (log_type != "DEBUG"):
+        add_to_influxdb(log_type, machine, service, message)
+        requests.get(pushover_url, params={'text': "%s [%s] [%s] : %s" % (log_type, machine, service, message)})
+        if (log_type == "ALARM"):
+            requests.get(sms_url, params={'msisdn': admin_msisdn, 'text': "%s [%s] [%s] : %s" % (log_type, machine, service, message)})
     return "OK"
 
 

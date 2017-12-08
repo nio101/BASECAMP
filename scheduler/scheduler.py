@@ -4,6 +4,8 @@
 """
 scheduler service
 
+dependencies: s, interphone
+
 (python2 ONLY - due to ZMQ/msgpack unicode handling)
 """
 
@@ -28,9 +30,9 @@ machine_name = socket.gethostname()
 th_config = configparser.ConfigParser()
 th_config.read(service_name+".ini")
 logfile = th_config.get('main', 'logfile')
-pushover_url = th_config.get('main', 'pushover_url')
 logbook_url = th_config.get('main', 'logbook_url')
 interphone_url = th_config.get('main', 'interphone_url')
+wait_at_startup = th_config.getint('main', 'wait_at_startup')
 # also: getfloat, getint, getboolean
 
 # log
@@ -52,11 +54,9 @@ log.addHandler(fh)
 log.addHandler(ch)
 
 log.warning(service_name+" is (re)starting !")
+time.sleep(wait_at_startup)
 # send a restart info to logbook
-requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "redémarrage"})
-
-# send a restart info on pushover
-# r = requests.get(pushover_url, params = {'text': "le service "+service_name+" a redémarré..."})
+requests.get(logbook_url, params={'log_type': "WARNING", 'machine': machine_name, 'service': service_name, 'message': "redémarrage"})
 
 # =======================================================
 # time announce job

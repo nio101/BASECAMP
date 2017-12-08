@@ -4,6 +4,8 @@
 """
 veilleuse service
 
+dependencies: interphone, logbook
+
 (python2.7/python3 compatible)
 """
 
@@ -16,6 +18,7 @@ import requests
 import re
 import sys
 import socket
+import time
 import CHIP_IO.Utilities as UT
 UT.unexport_all()
 
@@ -29,12 +32,12 @@ machine_name = socket.gethostname()
 th_config = configparser.ConfigParser()
 th_config.read(service_name+".ini")
 logfile = th_config.get('main', 'logfile')
-pushover_url = th_config.get('main', 'pushover_url')
 logbook_url = th_config.get('main', 'logbook_url')
 thresh_low = th_config.getint('main', 'thresh_low')
 thresh_high = th_config.getint('main', 'thresh_high')
 influxdb_query_url = th_config.get('main', 'influxdb_query_url')
 interphone_url = th_config.get('main', 'interphone_url')
+wait_at_startup = th_config.getint('main', 'wait_at_startup')
 # also: getfloat, getint, getboolean
 
 # log
@@ -56,6 +59,7 @@ log.addHandler(fh)
 log.addHandler(ch)
 
 log.warning(service_name+" is (re)starting !")
+time.sleep(wait_at_startup)
 
 # brings an error! :(
 # GPIO.cleanup()
@@ -75,10 +79,8 @@ else:
     log.info("lights are OFF")
     current_state = 0
 
-# send a restart info on pushover
-# r = requests.get(pushover_url, params={'text': "le service "+service_name+" a redémarré..."})
 # send a restart info to logbook
-requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "redémarrage"})
+requests.get(logbook_url, params={'log_type': "WARNING", 'machine': machine_name, 'service': service_name, 'message': "redémarrage"})
 
 while True:
     # process/evaluate the last light outdoor value every 5mn
@@ -88,7 +90,7 @@ while True:
     except requests.exceptions.RequestException as e:
         print(e.__str__())
         log.error(e.__str__())
-        requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "ERREUR! problème d'accès influxdb!"})
+        requests.get(logbook_url, params={'log_type': "ERROR", 'machine': machine_name, 'service': service_name, 'message': "Problème d'accès influxdb!"})
     else:
         res = r.json()["results"][0]["series"][0]["values"][0]
         light_value = res[1]
@@ -101,14 +103,12 @@ while True:
             # check it!
             if GPIO.input(probe):
                 log.error("lights are ON, but they shouldn't be!")
-                # r = requests.get(pushover_url, params={'text': "le service "+service_name+" a un problème de relais"})
-                requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "ERREUR! problème relais détecté."})
+                requests.get(logbook_url, params={'log_type': "ERROR", 'machine': machine_name, 'service': service_name, 'message': "Problème relais détecté."})
                 current_state = 1
             else:
                 log.info("lights are OFF")
-                # r = requests.get(pushover_url, params={'text': "le service "+service_name+" a éteint la veilleuse"})
-                requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "extinction de la veilleuse"})
-                requests.get(interphone_url, params={'service': service_name, 'announce': "Extinction de la veilleuse lumineuse"})
+                requests.get(logbook_url, params={'log_type': "INFO", 'machine': machine_name, 'service': service_name, 'message': "extinction de la veilleuse"})
+                requests.get(interphone_url, params={'service': service_name, 'announce': "Le jour est levé... Bonne journée!"})
                 current_state = 0
         elif (current_state == 0) and (light_value < thresh_low):
             # lights should be ON
@@ -119,13 +119,11 @@ while True:
             # check it!
             if GPIO.input(probe):
                 log.info("lights are ON")
-                # r = requests.get(pushover_url, params={'text': "le service "+service_name+" a allumé la veilleuse"})
-                requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "allumage de la veilleuse"})
-                requests.get(interphone_url, params={'service': service_name, 'announce': "Allumage de la veilleuse lumineuse"})
+                requests.get(logbook_url, params={'log_type': "INFO", 'machine': machine_name, 'service': service_name, 'message': "allumage de la veilleuse"})
+                requests.get(interphone_url, params={'service': service_name, 'announce': "La nuit est tombée... Bonne soirée!"})
                 current_state = 1
             else:
                 log.error("lights are OFF, but they shouldn't be!")
-                # r = requests.get(pushover_url, params={'text': "le service "+service_name+" a un problème de relais"})
-                requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "ERREUR! problème relais détecté."})
+                requests.get(logbook_url, params={'log_type': "ERROR", 'machine': machine_name, 'service': service_name, 'message': "Problème relais détecté."})
                 current_state = 0
     sleep(5*60)

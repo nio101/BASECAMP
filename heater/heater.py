@@ -4,6 +4,8 @@
 """
 heater service
 
+depends on: logbook, influxdb
+
 (python2 compatible)
 <insert open source licence here>
 """
@@ -59,7 +61,7 @@ def read_profile_settings(name):
     delta_temp_minus = float(th_config.get("thermostat", "delta_temp_minus"))
     calendrier = eval(th_config.get("thermostat", "calendrier"))
     log.info("loading profile '"+profile+"'")
-    requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "profil de chauffage=="+name})
+    requests.get(logbook_url, params={'log_type': "INFO", 'machine': machine_name, 'service': service_name, 'message': "profil de chauffage=="+name})
 
 
 def save_new_profile_to_ini():
@@ -107,7 +109,7 @@ def export_to_influxdb():
             print(e.__str__())
             log.error(e)
             log.error("Error reaching infludb on "+str(influxdb_host)+":"+str(influxdb_port))
-            requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "ERREUR! impossible d'accéder à influxdb!"})
+            requests.get(logbook_url, params={'log_type': "ERROR", 'machine': machine_name, 'service': service_name, 'message': "Impossible d'accéder à influxdb!"})
 
 
 # =======================================================
@@ -140,11 +142,11 @@ def check_temp_update():
     except (requests.exceptions.RequestException, requests.exceptions.ConnectionError) as e:
         print(e.__str__())
         log.error(e.__str__())
-        requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "ERREUR! problème d'accès influxdb!"})
+        requests.get(logbook_url, params={'log_type': "ERROR", 'machine': machine_name, 'service': service_name, 'message': "Problème d'accès influxdb!"})
     except:
         print("Unexpected error:", sys.exc_info()[0])
         log.error("Unexpected error:"+sys.exc_info()[0])
-        requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "ERREUR! problème d'accès influxdb!"})
+        requests.get(logbook_url, params={'log_type': "ERROR", 'machine': machine_name, 'service': service_name, 'message': "Problème d'accès influxdb!"})
     else:
         res = r.json()["results"][0]["series"][0]["values"][0]
         timestamp = res[0]
@@ -195,7 +197,7 @@ def check_temp_update():
                 log.info("relay probe is HIGH")
                 # alarm if probe is not LOW
                 log.error("unable to reset heater relay, stopping here")
-                requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "ERREUR! impossible d'ouvrir le relais!"})
+                requests.get(logbook_url, params={'log_type': "ERROR", 'machine': machine_name, 'service': service_name, 'message': "Impossible d'ouvrir le relais!"})
                 exit(1)
             else:
                 log.info("heater latching relay is OFF")
@@ -219,7 +221,7 @@ def check_temp_update():
                 log.info("relay probe is LOW")
                 # alarm if probe is not HIGH
                 log.error("unable to set heater relay, stopping here")
-                requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "ERREUR! impossible de fermer le relais!"})
+                requests.get(logbook_url, params={'log_type': "ERROR", 'machine': machine_name, 'service': service_name, 'message': "Impossible de fermer le relais!"})
                 exit(1)
             # send alarm if probe not ok
             relay_out = 1
@@ -290,6 +292,7 @@ logfile = th_config.get('main', 'logfile')
 logbook_url = th_config.get('main', 'logbook_url')
 hostname = th_config.get('main', 'hostname')
 port = th_config.getint('main', 'port')
+wait_at_startup = th_config.getint('main', 'wait_at_startup')
 influxdb_host = th_config.get("influxdb", "influxdb_host")
 influxdb_port = th_config.get("influxdb", "influxdb_port")
 influxdb_query_url = "http://"+influxdb_host+":"+influxdb_port+"/query"
@@ -313,9 +316,11 @@ ch.setFormatter(formatter)
 log.addHandler(fh)
 log.addHandler(ch)
 
+time.sleep(wait_at_startup)
+
 log.warning(service_name+" restarted")
 # send a restart info to logbook
-requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "redémarrage"})
+requests.get(logbook_url, params={'log_type': "WARNING", 'machine': machine_name, 'service': service_name, 'message': "redémarrage"})
 
 # influxdb init
 client = InfluxDBClient(influxdb_host, influxdb_port)
@@ -395,7 +400,7 @@ if GPIO.input(probe):
     log.info("relay probe is HIGH")
     # alarm if probe is not 0
     log.error("unable to reset heater relay, stopping here")
-    requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "ERREUR! impossible d'ouvrir le relais!"})
+    requests.get(logbook_url, params={'log_type': "ERROR", 'machine': machine_name, 'service': service_name, 'message': "Impossible d'ouvrir le relais!"})
     exit(1)
 else:
     log.info("relay probe is LOW")

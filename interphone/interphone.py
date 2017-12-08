@@ -4,6 +4,8 @@
 """
 interphone service
 
+dependencies: logbook, TTS server
+
 (python2.7/python3 compatible)
 """
 
@@ -19,6 +21,7 @@ import socket
 from datetime import datetime
 from bottle import run, request, get
 import uuid
+import time
 
 
 # =======================================================
@@ -131,9 +134,9 @@ machine_name = socket.gethostname()
 th_config = configparser.ConfigParser()
 th_config.read(service_name+".ini")
 logfile = th_config.get('main', 'logfile')
-pushover_url = th_config.get('main', 'pushover_url')
 logbook_url = th_config.get('main', 'logbook_url')
 tts_url = th_config.get('main', 'tts_url')
+wait_at_startup = th_config.getint('main', 'wait_at_startup')
 keys_lifespan = th_config.getint('http', 'lifespan')
 hostname = th_config.get('http', 'hostname')
 port = th_config.getint('http', 'port')
@@ -158,8 +161,9 @@ log.addHandler(fh)
 log.addHandler(ch)
 
 log.warning(service_name+" is (re)starting !")
+time.sleep(wait_at_startup)
 # send a restart info to logbook
-requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "redémarrage"})
+requests.get(logbook_url, params={'log_type': "WARNING", 'machine': machine_name, 'service': service_name, 'message': "redémarrage"})
 
 # =======================================================
 # main stuff

@@ -4,6 +4,8 @@
 """
 Basecamp web_server sample skeleton
 
+dependencies: GSM modem with SIM card, s
+
 (python2/python3 compatible)
 note:   webserver may not be multi-threaded/non-blocking.
         if needed, use bottle with gunicorn for example.
@@ -16,12 +18,11 @@ import logging.handlers
 import configparser
 import requests
 import gammu
-from threading import *
-import umsgpack
-import zmq
+from threading import Timer
 import re
 import sys
 import socket
+import time
 
 
 # =======================================================
@@ -36,9 +37,9 @@ logfile = th_config.get('main', 'logfile')
 hostname = th_config.get('main', 'hostname')
 port = th_config.getint('main', 'port')
 allowed_msisdn = map(lambda s: s.strip('\''), th_config.get('main', 'allowed_msisdn').split(','))
-pushover_url = th_config.get('main', 'pushover_url')
 gammu_config_filename = th_config.get('main', 'gammu_config_filename')
 logbook_url = th_config.get('main', 'logbook_url')
+wait_at_startup = th_config.getint('main', 'wait_at_startup')
 # also: getfloat, getint, getboolean
 
 # log
@@ -60,13 +61,10 @@ log.addHandler(fh)
 log.addHandler(ch)
 
 log.warning(service_name+" is (re)starting !")
+time.sleep(wait_at_startup)
 
-# ZMQ init
-context = zmq.Context()
-# muta orders channel
-socket_pub = context.socket(zmq.PUB)
-socket_pub.connect("tcp://bc-hq.local:5000")
-log.info("ZMQ connect: PUB on tcp://bc-hq.local:5000 (orders)")
+# send a restart info to logbook
+requests.get(logbook_url, params={'log_type': "WARNING", 'machine': machine_name, 'service': service_name, 'message': "redémarrage"})
 
 # Create state machine object
 sm = gammu.StateMachine()
@@ -79,7 +77,8 @@ except Exception as e:
     print(e.__str__())
     log.error(e)
     log.error("Erreur init GAMMU, sm.Init() failed")
-    requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "Erreur init GAMMU, sm.Init() failed!"})
+    # not! would create an infinite loop!
+    # requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "Erreur init GAMMU, sm.Init() failed!"})
     exit(0)
 # Reads network information from phone
 netinfo = sm.GetNetworkInfo()
@@ -87,12 +86,16 @@ netinfo = sm.GetNetworkInfo()
 network_code = netinfo['NetworkCode']
 if (network_code != '208 01') and (network_code != '208 02'):
     log.error("no registered mobile network, network code:'%s'" % network_code)
-    requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "ERREUR! no registered mobile network"})
+    # not! would create an infinite loop!
+    # requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "ERREUR! no registered mobile network"})
     exit(1)
 signal_level = sm.GetSignalQuality()['SignalPercent']
 if (signal_level < 30):
-    log.error("mobile network signal level is LOW: %i" % signal_level)
-    requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "WARNING! mobile network signal level is LOW: "+str(signal_level)})
+    log.warning("mobile network signal level is LOW: %i" % signal_level)
+    requests.get(logbook_url, params={'log_type': "WARNING", 'machine': machine_name, 'service': service_name, 'message': "WARNING! mobile network signal level is LOW: "+str(signal_level)})
+else:
+    log.info("mobile network signal level is: %i" % signal_level)
+    requests.get(logbook_url, params={'log_type': "INFO", 'machine': machine_name, 'service': service_name, 'message': "mobile network signal level is: "+str(signal_level)})
 # check for any existing SMS, and purge them if needed
 status = sm.GetSMSStatus()
 remain = status['SIMUsed'] + status['PhoneUsed'] + status['TemplatesUsed']
@@ -114,11 +117,9 @@ if (remain > 0):
         m = x[0]
         sm.DeleteSMS(0, m['Location'])
 
-# send a restart info to logbook
-requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "redémarrage"})
-
 # =======================================================
 # URL handlers
+
 
 @get('/alive')
 def do_alive():
@@ -133,13 +134,15 @@ def send_SMS():
     message = {'Text': uni_text, 'SMSC': {'Location': 1}, 'Number': msisdn}
     try:
         sm.SendSMS(message)
-        requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "SMS envoyé à "+str(msisdn)})
+        requests.get(logbook_url, params={'log_type': "INFO", 'machine': machine_name, 'service': service_name, 'message': "SMS envoyé à "+str(msisdn)})
+        log.info("SMS sent!")
         return("OK")
     except Exception as e:
         print(e.__str__())
         log.error(e)
         log.error("error sending SMS to %s: '%s'" % (msisdn, uni_text))
-        requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "ERREUR! échec de l'envoi du SMS à "+msisdn})
+        # not! would create an infinite loop!s
+        # requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "ERREUR! échec de l'envoi du SMS à "+msisdn})
         return("ERROR")
 
 # =======================================================
@@ -166,18 +169,20 @@ def check_incoming_SMS():
                 sms.append(cursms)
             data = gammu.LinkSMS(sms)
             for x in data:
-                v = gammu.DecodeSMS(x)
+                gammu.DecodeSMS(x)
                 m = x[0]
                 log.info("new SMS received from %s: %s" % (m['Number'], m['Text']))
-                requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "SMS received from "+str(m['Number'])})
+                requests.get(logbook_url, params={'log_type': "INFO", 'machine': machine_name, 'service': service_name, 'message': "SMS received from "+str(m['Number'])})
                 if (m['Number'] in allowed_msisdn):
-                    # broadcast info to Basecamp PUB
-                    msg_data = umsgpack.packb([m['Number'], m['Text']])
-                    topic = "basecamp.SMS.incoming"
-                    socket_pub.send("%s %s" % (topic, msg_data))
+                    # TODO: exploiter les SMS en arrivée
+
+                    # msg_data = umsgpack.packb([m['Number'], m['Text']])
+                    # topic = "basecamp.SMS.incoming"
+                    # socket_pub.send("%s %s" % (topic, msg_data))
+                    pass
                 else:
                     log.warning("%s is not allowed to send SMS to Basecamp!" % m['Number'])
-                    requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "WARNING! "+str(m['Number'])+" n'est un numéro autorisé en réception!"})
+                    requests.get(logbook_url, params={'log_type': "WARNING", 'machine': machine_name, 'service': service_name, 'message': str(m['Number'])+" n'est un numéro autorisé en réception!"})
                 # now delete it
                 sm.DeleteSMS(0, m['Location'])
     except Exception as e:
@@ -186,8 +191,8 @@ def check_incoming_SMS():
         log.warning("could not check incoming SMS! :s")
         if last_try_OK is not True:
             consecutive_check_failures = consecutive_check_failures + 1
-            if consecutive_check_failures == 3:
-                requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "ERREUR! impossible de vérifier présence SMS (3 fois de suite)"})
+            if consecutive_check_failures == 5:
+                requests.get(logbook_url, params={'log_type': "WARNING", 'machine': machine_name, 'service': service_name, 'message': "Impossible de vérifier présence SMS (5 fois de suite)"})
                 consecutive_check_failures = 0
         else:
             last_try_OK = False

@@ -7,6 +7,8 @@ water monitoring service
 detect impulses and immediatly send events to influxdb
 one impulse == 1 liter
 
+dependencies: wifi, logbook, influxdb
+
 for python3 (for python2, don't use the readline() str/ascii conversion)
 <insert open source licence here>
 """
@@ -36,7 +38,7 @@ th_config = configparser.ConfigParser()
 th_config.read(service_name+".ini")
 logfile = th_config.get('main', 'logfile')
 logbook_url = th_config.get('main', 'logbook_url')
-pushover_url = th_config.get('main', 'pushover_url')
+wait_at_startup = th_config.getint('main', 'wait_at_startup')
 influxdb_host = th_config.get("influxdb", "influxdb_host")
 influxdb_port = th_config.get("influxdb", "influxdb_port")
 # also: getfloat, getint, getboolean
@@ -60,8 +62,9 @@ log.addHandler(fh)
 log.addHandler(ch)
 
 log.warning(service_name+" is (re)starting !")
+time.sleep(wait_at_startup)
 # send a restart info to logbook
-requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "redémarrage"})
+requests.get(logbook_url, params={'log_type': "WARNING", 'machine': machine_name, 'service': service_name, 'message': "redémarrage"})
 
 # influxdb init
 client = InfluxDBClient(influxdb_host, influxdb_port)
@@ -102,4 +105,4 @@ while True:
         print(e.__str__())
         log.error(e)
         log.error("Error reaching infludb on "+str(influxdb_host)+":"+str(influxdb_port))
-        requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "ERREUR: impossible d'accéder à influxdb!"})
+        requests.get(logbook_url, params={'log_type': "ERROR", 'machine': machine_name, 'service': service_name, 'message': "Impossible d'accéder à influxdb!"})

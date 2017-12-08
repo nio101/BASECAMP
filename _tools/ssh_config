@@ -1,0 +1,18 @@
+Host bc-hq
+  HostName bc-hq.local
+  User nio
+Host bc-ui
+  Hostname bc-ui.local
+  User nio
+Host bc-power
+  Hostname bc-power.local
+  User nio
+Host bc-watch
+  Hostname bc-watch.local
+  User nio
+Host bc-veilleuse
+  Hostname bc-veilleuse.local
+  User chip
+Host bc-water
+  Hostname bc-water.local
+  User chip

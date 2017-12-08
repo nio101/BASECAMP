@@ -4,6 +4,8 @@
 """
 Basecamp web_server sample skeleton
 
+dependencies: ?
+
 (python2/python3 compatible)
 note:   webserver may not be multi-threaded/non-blocking.
         if needed, use bottle with gunicorn for example.
@@ -15,6 +17,7 @@ import logging
 import logging.handlers
 import configparser
 import requests
+import time
 
 
 # =======================================================
@@ -30,6 +33,7 @@ port = th_config.getint('main', 'port')
 app_token = th_config.get('main', 'app_token')
 user_token = th_config.get('main', 'user_token')
 pushover_url = th_config.get('main', 'pushover_url')
+wait_at_startup = th_config.getint('main', 'wait_at_startup')
 # also: getfloat, getint, getboolean
 
 # log
@@ -46,7 +50,7 @@ fh.setFormatter(formatter)
 log.addHandler(fh)
 
 log.warning(service_name+" is (re)starting !")
-
+time.sleep(wait_at_startup)
 # send a restart info on pushover
 r = requests.get(pushover_url, params = {'text': "le service "+service_name+" a redémarré..."})
 

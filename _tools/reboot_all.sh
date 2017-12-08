@@ -1,0 +1,7 @@
+ssh bc-watch "sudo reboot now"
+ssh bc-ui "sudo reboot now"
+ssh bc-hq "sudo reboot now"
+ssh bc-power "sudo reboot now"
+ssh bc-water "sudo reboot now"
+ssh bc-veilleuse "sudo reboot now"
+ssh bc-water "sudo reboot now"
