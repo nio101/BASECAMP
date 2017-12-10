@@ -63,7 +63,9 @@ requests.get(logbook_url, params={'log_type': "WARNING", 'machine': machine_name
 
 
 def job(h, m):
-    announce = d_announce[h+m]
+    # ajouter des conditions:
+    # si on est en mode absent, couché ou silence, pas d'annonce!
+    announce = "Hey! "+d_announce[h+m]
     requests.get(interphone_url, params={'service': service_name, 'announce': announce})
 
 

@@ -89,8 +89,11 @@ def do_set_profile():
     service = request.query.service
     announce = request.query.announce
     m_key = request.query.key
+    volume = request.query.volume
+    if volume is None:
+        volume = default_volume
 
-    log.info("%s (key=%s): %s" % (service, m_key, announce))
+    log.info("%s (key=%s): %s (%s)" % (service, m_key, announce, volume))
 
     now = datetime.now()
     if ((now-key_ts).total_seconds() > keys_lifespan):
@@ -99,21 +102,22 @@ def do_set_profile():
         return("ERROR: key is missing, or invalid/expired")
 
     # request TTS wav file
-    r = requests.get(tts_url, params = {'text': announce}, stream=True)
-    if r.status_code==200:
+    r = requests.get(tts_url, params={'text': announce}, stream=True)
+    if r.status_code == 200:
         wav_url = r.text
         # download wav file
         local_wav = download_file(wav_url)
         call(["sox", local_wav, "announce_plus_contrast.wav", "contrast"])
         # play wav file
-        
         # volume = 70
         # call(["amixer", "-D", "pulse", "sset", "Master", str(volume)+"%"])
+        """
         if (now.hour >= 7) and (now.hour <= 23):
             vol1 = "50%"
         else:
             vol1 = "35%"
-        call(["amixer", "-D", "pulse", "sset", "Master", vol1])
+        """
+        call(["amixer", "-D", "pulse", "sset", "Master", volume])
         os.system("aplay codeccall.wav")
         os.system("aplay codecopen.wav")
         os.system("aplay announce_plus_contrast.wav")
@@ -140,6 +144,8 @@ wait_at_startup = th_config.getint('main', 'wait_at_startup')
 keys_lifespan = th_config.getint('http', 'lifespan')
 hostname = th_config.get('http', 'hostname')
 port = th_config.getint('http', 'port')
+default_volume = th_config.get('main', 'default_volume')
+print(default_volume)
 # also: getfloat, getint, getboolean
 
 # log

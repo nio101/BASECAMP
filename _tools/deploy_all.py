@@ -13,6 +13,8 @@ from colorama import Fore
 import xmlrpc.client
 import os.path
 import argparse
+import requests
+import codecs
 
 
 # =======================================================
@@ -27,10 +29,14 @@ args = parser.parse_args()
 
 # .ini
 th_config = configparser.ConfigParser()
-th_config.read("basecamp_deploy_info.ini")
+# patch to get configparser to properly handle utf8
+th_config.read_file(codecs.open("basecamp_deploy_info.ini", "r", "utf8"))
+# th_config.read("basecamp_deploy_info.ini")
 private_ini_dir = th_config.get('main', 'private_ini_dir')
 xmlrpc_prefix = th_config.get('main', 'xmlrpc_prefix')
 xmlrpc_suffix = th_config.get('main', 'xmlrpc_suffix')
+interphone_url = th_config.get('main', 'interphone_url')
+synth_message = th_config.get('main', 'synth_message')
 # also: getfloat, getint, getboolean
 
 machines = {}
@@ -41,14 +47,20 @@ for machine in th_config.options("machines"):
 # =======================================================
 # main loop
 
+try:
+    requests.get(interphone_url, params={'service': '_deployment_tool', 'announce': synth_message, 'volume': "60%"}, timeout=15)
+except:
+    pass
+
+
 print("stopping services")
 print("=================")
 
 for machine in machines.keys():
-    # print(machine)
+    print("--- "+machine)
     server = xmlrpc.client.ServerProxy(xmlrpc_prefix+machine+xmlrpc_suffix)
     server_state = server.supervisor.getState()["statename"]
-    print("--- "+machine+": "+server.supervisor.getIdentification()+":"+server_state)
+    print(server.supervisor.getIdentification()+":"+server_state)
     if (server_state != "RUNNING"):
         print(Fore.RED+"!!! ERROR trying to restart supervisord on "+machine+", status="+server_state+" !!!"+Fore.GREEN)
     else:

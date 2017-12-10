@@ -4,11 +4,9 @@
 
 Pour bc-watch, bc-hq et bc-annex:
 
-- [ ] faire un script qui récupère les .ini déployés dans _my_very_own_files_ gitignoré + un autre script de déploiement automatisé des scripts python + fichiers .ini perso - utiliser fichier de config générique avec machine/path_dest. Garder des fichiers .ini génériques avec chaque module, et une instanciation perso ignorée par git.
-
 - [ ] mettre des temporisations au début des scripts pour water+SMS, pour laisser le temps de monter le réseau (wifi pour l'un, SMS pour l'autre), et augmenter les retries dans supervisord.conf
 - [ ] mettre une clé privée/publique sur bc-watch pour faire des ssh sur les autres machines (reboot & autres?)?
-- [ ] Tablette en veille quand absent ou dort, allumée sinon comme cadre photo avec flickr-groupe chouette du japon! le tout par... ???
+- [ ] Tablette en veille quaxnd absent ou dort, allumée sinon comme cadre photo avec flickr-groupe chouette du japon! le tout par
 - [ ] mettre le début du chauffage à 6h30 le matin
 - [ ] ajouter alarme quand heater ne recoit pas d'update de température du salon depuis X minutes (avec reset)
 - [ ] quand coupure de courant, si bc-watch pas accessible, les autres services ne démarrent pas (logbook pas accessible => erreur). => fiabiliser watch 
@@ -107,7 +105,7 @@ Each service automatically (re)started by supervisord should also send a notific
 
 ### veilleuse **[DONE]**
 + purpose: turn ON/OFF some night lights based on the outdoor light level, as measured by MUTA scout units
-+ machine: bc-veilleuse
++ machine: bc-presence
 + when the outdoor light level rises/falls above/under a light threshold, a latching relay is activated to turn OFF/ON night lights.
 
 ### heater **[DONE]**
@@ -186,7 +184,7 @@ Many services are set on many machines. Complex interactions between them are do
   * bonjour: bc-hq.local
   * fixed IP: 192.168.1.50
 
-* `bc-annex` (win7 on old Atom, remote desktop/Nomachine bc-watch.local, UP) mainly hosts the windows-based SAPI5 synthesis, and the **interphone** server module. It MAY also host some periodical scraping / transcoding tasks (video feeds), and some scraping about the weather forecast. It is powered by an old **Atom** motherboard, under **windows 7**.
+* `bc-annex` (win7 on old Atom, remote desktop/Nomachine bc-watch.local, UP) mainly hosts the windows-based SAPI5 synthesis, and the **interphone** server module. It also host some periodical scraping / transcoding tasks (video feeds), and some scraping about the weather forecast. It is powered by an old **Atom** motherboard, under **windows 7**.
   * bonjour: bc-annex.local
   * fixed IP: 192.168.1.55
 
@@ -194,11 +192,11 @@ Many services are set on many machines. Complex interactions between them are do
   * bonjour: bc-watch.local
   * fixed IP: 192.168.1.54
 
-* `bc-veilleuse` (Debian Jessi on CHIP, ssh chip@bc-veilleuse.local, UP) is the veilleuse module, located near the bc-ui unit, that will:
+* `bc-presence` (Debian Jessi on CHIP, ssh chip@bc-presence.local, UP) is the presence module, located near the bc-ui unit, that will:
   + detect any nearby presence using PIR sensors, and then wake up the bc-ui from screensaver, to let the user see the dashboard slideshow/clock (+ update the presence if required, or set an alarm if _lockout_ state)
   + monitor the outdoor luminosity to turn on/off the night led lights in the living room
   + scan regularly via bluetooth to check if the Galaxy A5 is detected nearby, and set the presence variable accordingly (disable _lockout_, greets & report)
-    * bonjour: bc-veilleuse.local
+    * bonjour: bc-presence.local
     * fixed IP: 192.168.1.53
   
 * `bc-power` (Raspbian on RPi1, ssh nio@bc-power.local, UP) is the module located near the house heater and main power metering unit, that will:
@@ -221,31 +219,9 @@ Many services are set on many machines. Complex interactions between them are do
 use a dedicated script in `/etc/network/if-up.d` to send a logbook notification for every machine restart.
 <br>_or in /etc/rc.local on rpi for example, since the above doesn't work, they broke the if-up.d mechanism on the last raspbian..._
 
-
-## ZMQ messaging
-
-A single PUB/SUB messaging pattern is used for exchanging:
-* orders, requests, actions that needs to be performed
-* answers, reports, information or events
-
-Only information and commands that should be shared among multiple services are passing through this communication mechanism.
-Other peer2peer-like commands would be done using basic REST commands, that are easier to implement/debug.
-
-Each basecamp module can then PUB/SUB on any topic, to send/receive orders, or events across the machines/network.
-
-Forwarder is hosted on `basecamp_hq`, and binds PUB/SUB to `basecamp_hq`'s local TCP ports:
-`.bind("tcp://*:%s" % port)`.
-Module can then connect to the forwarders PUB or SUB ports using `.connect("tcp://basecamp_hq:%s" % port)`
-
-ZMQ PUB/SUB topics are used to filter messages.
-
-Topics:
-* bc.muta(.order/.update)
-* basecamp.interphone.client (play message requests from interphone server)
-* basecamp.interphone.server (annoucement requests from other modules)
-* basecamp.operator (orders sent to field units)
-* basecamp.concierge (presence declaration/manual mode)
-
-* basecamp.watchdog (PING answers sent periodically by every module to the watchdog)
-* basecamp.operator (reports received from field units)
-* basecamp.concierge (update presence)
+## Startup sequence
+1. logbook
+2. pushover (+15s)
+3. SMS_operator (+60s)
+4. interphone (+75s)
+5. all other (+90s)
