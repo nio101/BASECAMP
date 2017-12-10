@@ -1,0 +1,10 @@
+notes.txt
+
+sox announce_plus_contrast.wav test.wav highpass 1000 highpass 1000 gain 10 && aplay test.wav
+2x highpass & gain 10
+
+concatenation
+sox beep_in_22k.wav test.wav beep_out_22k.wav res1.wav
+
++ mélange & trim au plus court
+sox -m in1.wav in2.wav out.wav trim 0 `soxi -D in1.wav`
