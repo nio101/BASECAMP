@@ -113,13 +113,13 @@ def do_add():
     if log_type not in ["DEBUG", "WARNING", "INFO", "ERROR", "ALARM"]:
         return "ERROR: log_type not in [DEBUG,WARNING,INFO,ERROR,ALARM]!"
     machine = request.query.machine
-    if machine is None:
+    if machine == "":
         return "ERROR: machine field should NOT be None"
     service = request.query.service
-    if service is None:
+    if service == "":
         return "ERROR: service field should NOT be None"
     message = request.query.message
-    if message is None:
+    if message == "":
         return "ERROR: message field should NOT be None"
     log.info("%s [%s] [%s] : %s" % (log_type, machine, service, message))
     if (log_type != "DEBUG"):

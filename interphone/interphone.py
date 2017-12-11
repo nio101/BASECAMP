@@ -14,7 +14,7 @@ import logging.handlers
 import configparser
 import requests
 import os
-from subprocess import call
+from subprocess import call, check_output
 import re
 import sys
 import socket
@@ -90,7 +90,7 @@ def do_set_profile():
     announce = request.query.announce
     m_key = request.query.key
     volume = request.query.volume
-    if volume is None:
+    if volume == "":
         volume = default_volume
 
     log.info("%s (key=%s): %s (%s)" % (service, m_key, announce, volume))
@@ -107,7 +107,7 @@ def do_set_profile():
         wav_url = r.text
         # download wav file
         local_wav = download_file(wav_url)
-        call(["sox", local_wav, "announce_plus_contrast.wav", "contrast"])
+        # call(["sox", local_wav, "announce_plus_contrast.wav", "contrast"])
         # play wav file
         # volume = 70
         # call(["amixer", "-D", "pulse", "sset", "Master", str(volume)+"%"])
@@ -117,11 +117,24 @@ def do_set_profile():
         else:
             vol1 = "35%"
         """
+        # post-process the synthesis
+        # call(["sox", local_wav, "announce_plus_contrast.wav", "contrast"])
+        # apply multiple high pass filters on voice
+        call(["sox", local_wav, "tmp.wav", "contrast", "highpass", "1000", "highpass", "1000", "gain", "15"])
+        # concatenate with in and out fx
+        call(["sox", "fx/beep_in_22k.wav", "tmp.wav", "fx/beep_out_22k.wav", "tmp2.wav", "gain", "3"])
+        # mix with static noise and trim
+        res1 = check_output(["soxi", "-D", "tmp2.wav"])
+        print(res1)
+        print("'"+str(float(res1))+"'")
+        call(["sox", "-m", "tmp2.wav", "fx/static_22k.wav", "res.wav", "trim", "0", str(float(res1))])
+        # now, play it
+        print("'"+volume+"'")
         call(["amixer", "-D", "pulse", "sset", "Master", volume])
-        os.system("aplay codeccall.wav")
-        os.system("aplay codecopen.wav")
-        os.system("aplay announce_plus_contrast.wav")
-        os.system("aplay codecover.wav")
+        # os.system("aplay codeccall.wav")
+        # os.system("aplay codecopen.wav")
+        os.system("aplay res.wav")
+        # os.system("aplay codecover.wav")
         # remove the file
         os.remove(local_wav)
         return("OK")
@@ -145,7 +158,6 @@ keys_lifespan = th_config.getint('http', 'lifespan')
 hostname = th_config.get('http', 'hostname')
 port = th_config.getint('http', 'port')
 default_volume = th_config.get('main', 'default_volume')
-print(default_volume)
 # also: getfloat, getint, getboolean
 
 # log
