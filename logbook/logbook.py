@@ -94,7 +94,6 @@ def add_to_influxdb(log_type, machine, service, message):
         print(e.__str__())
         log.error(e)
         log.error("ERROR reaching infludb on "+str(influxdb_host)+":"+str(influxdb_port))
-        log.error("WARNING [%s] [%s] : redémarrage" % (machine_name, service_name))
         requests.get(sms_url, params={'msisdn': admin_msisdn, 'text': "ERREUR! impossible d'accéder à influxdb!"}, timeout=sms_timeout)
 
 
