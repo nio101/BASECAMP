@@ -77,9 +77,9 @@ def job(h, m):
 hours = []
 # announce only between 7h00-22h30
 for hour in range(7, 23):
-    hours.append('{0:02d}'.format(hour))
-hour_marks = ["00", "15", "30", "45"]
-# hour_marks = ["00", "30"]
+    hours.append('{0:01d}'.format(hour))
+# hour_marks = ["00", "15", "30", "45"]
+hour_marks = ["00", "30"]
 for hour in hours:
     for mn in hour_marks:
         schedule.every().day.at(hour+":"+mn).do(job, hour, mn)
