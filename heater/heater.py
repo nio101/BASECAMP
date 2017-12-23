@@ -10,7 +10,6 @@ depends on: logbook, influxdb
 <insert open source licence here>
 """
 
-
 import logging
 import logging.handlers
 import configparser
@@ -27,8 +26,10 @@ from influxdb import InfluxDBClient
 import re
 import sys
 import socket
+import maya
 
 
+# sudo apt-get -y install python3-rpi.gpio
 try:
     import RPi.GPIO as GPIO
 except RuntimeError:
@@ -42,6 +43,67 @@ class ThMode:   # ThMode reflects the current heating mode
     ECO, COMFORT = range(2)
 
 
+def check_applicable_profile():
+    """
+    determine which profile should be used, and read it
+    remove any expired profile from suppl_profile and except_profile
+    """
+    global current_profile
+    global base_profile
+    global except_profile
+    global except_expiration
+    global suppl_profile
+    global suppl_expiration
+
+    if except_profile != "":
+        # is it expired?
+        now = maya.now()
+        if now > except_expiration:
+            notify("removing except_profile \'{}\' that expired {}.".format(except_profile, except_expiration.slang_time()))
+            except_profile = ""
+            except_expiration = None
+            update_ini()
+        else:
+            # not expired, then applicable
+            if current_profile != except_profile:
+                current_profile = except_profile
+                notify("except_profile \'{}\' applicable for {}.".format(except_profile, except_expiration.slang_time()))
+                read_profile_settings(current_profile)
+
+    if (except_profile == "") and (suppl_profile != ""):
+        # is it expired?
+        now = maya.now()
+        if now > suppl_expiration:
+            notify("removing suppl_profile \'{}\' that expired {}.".format(suppl_profile, suppl_expiration.slang_time()))
+            suppl_profile = ""
+            suppl_expiration = None
+            update_ini()
+        else:
+            # not expired, then applicable
+            if current_profile != suppl_profile:
+                current_profile = suppl_profile
+                notify("suppl_profile \'{}\' applicable for {}.".format(suppl_profile, suppl_expiration.slang_time()))
+                read_profile_settings(current_profile)
+
+    if (except_profile == "") and (suppl_profile == ""):
+        # use the base_profile
+        if current_profile != base_profile:
+            current_profile = base_profile
+            notify("base_profile \'{}\' is becoming the current profile.".format(current_profile))
+            read_profile_settings(current_profile)
+    return
+
+
+def notify(msg):
+    """
+    proper notification tryout
+    """
+    log.info(msg)
+    requests.get(logbook_url, params={'log_type': "INFO", 'machine': machine_name, 'service': service_name, 'message': msg},
+                 timeout=logbook_timeout)
+    # also send to the logbook!
+
+
 def read_profile_settings(name):
     """
     read the profile characteristics from the corresponding .ini file
@@ -50,29 +112,75 @@ def read_profile_settings(name):
     global temp_conf
     global delta_temp_plus
     global delta_temp_minus
-    global calendrier
+    global calendar
+    global main_sensor_calendar
     global service_name
+    global current_profile
     # read thermostat parameters from text file
-    th_config = configparser.ConfigParser()
-    th_config.read("profiles/"+name+".ini")
-    temp_eco = float(th_config.get("thermostat", "temp_eco"))
-    temp_conf = float(th_config.get("thermostat", "temp_conf"))
-    delta_temp_plus = float(th_config.get("thermostat", "delta_temp_plus"))
-    delta_temp_minus = float(th_config.get("thermostat", "delta_temp_minus"))
-    calendrier = eval(th_config.get("thermostat", "calendrier"))
-    log.info("loading profile '"+profile+"'")
-    requests.get(logbook_url, params={'log_type': "INFO", 'machine': machine_name, 'service': service_name, 'message': "profil de chauffage=="+name})
+    log.info("loading profile '"+current_profile+"'")
+    sub_th_config = configparser.ConfigParser()
+    sub_th_config.read("profiles/"+name+".ini")
+    temp_eco = float(sub_th_config.get("thermostat", "temp_eco"))
+    temp_conf = float(sub_th_config.get("thermostat", "temp_conf"))
+    delta_temp_plus = float(sub_th_config.get("thermostat", "delta_temp_plus"))
+    delta_temp_minus = float(sub_th_config.get("thermostat", "delta_temp_minus"))
+    calendar = eval(sub_th_config.get("thermostat", "calendar"))
+    main_sensor_calendar = eval(sub_th_config.get("thermostat", "main_sensor_calendar"))
+    # requests.get(logbook_url, params={'log_type': "INFO", 'machine': machine_name, 'service': service_name, 'message': "profil de chauffage=="+name})
 
 
-def save_new_profile_to_ini():
+def update_ini():
     """
-    when a new profile is selected, save it to .ini in case of reboot/restart
+    when any change to the configuration needs to be saved,
+    save it to .ini in case of reboot/restart
     """
     global th_config
-    global profile
-    th_config.set('main', 'profile', profile)
+    global current_profile
+    global base_profile
+    global except_profile
+    global except_expiration
+    global suppl_profile
+    global suppl_expiration
+
+    th_config.set("heating", "base_profile", base_profile)
+
+    if suppl_profile != "":
+        th_config.set("heating", "suppl_profile", suppl_profile)
+        suppl_expiration_txt = suppl_expiration.rfc3339()
+        th_config.set("heating", "suppl_expiration", suppl_expiration_txt)
+    else:
+        th_config.set("heating", "suppl_profile", "")
+        th_config.set("heating", "suppl_expiration", "")
+
+    if except_profile != "":
+        th_config.set("heating", "except_profile", except_profile)
+        except_expiration_txt = except_expiration.rfc3339()
+        th_config.set("heating", "except_expiration", except_expiration_txt)
+    else:
+        th_config.set("heating", "except_profile", "")
+        th_config.set("heating", "except_expiration", "")
+
     with open(service_name+".ini", 'w') as configfile:
         th_config.write(configfile)
+    return
+
+
+def determine_sensor():
+    global main_sensor
+    global secondary_sensor
+    global main_sensor_calendar
+    res = False
+    now = datetime.datetime.today()
+    for _slice in main_sensor_calendar:
+        beg = now.replace(hour=int(_slice[0:2]), minute=int(_slice[3:5]))
+        end = now.replace(hour=int(_slice[6:8]), minute=int(_slice[9:11]))
+        if ((now >= beg) and (now < end)):
+            res = True
+            break
+    if res is True:
+        return main_sensor
+    else:
+        return secondary_sensor
 
 
 def is_calendar_on_eco(calendar):
@@ -109,7 +217,8 @@ def export_to_influxdb():
             print(e.__str__())
             log.error(e)
             log.error("Error reaching infludb on "+str(influxdb_host)+":"+str(influxdb_port))
-            requests.get(logbook_url, params={'log_type': "ERROR", 'machine': machine_name, 'service': service_name, 'message': "Impossible d'accéder à influxdb!"})
+            requests.get(logbook_url, params={'log_type': "ERROR", 'machine': machine_name, 'service': service_name, 'message': "Impossible d'accéder à influxdb!"},
+                         timeout=logbook_timeout)
 
 
 # =======================================================
@@ -122,42 +231,44 @@ def timer_export_influxdb():
 
 # check temp update and determine relay output accordingly
 def check_temp_update():
-    global socks
     global th_mode
     global temp_in
     global relay_out
     global log
     global aimed_temp
-    global temp_eco
-    global temp_conf
     global delta_temp_plus
     global delta_temp_minus
+
+    check_applicable_profile()
 
     t = Timer(30, check_temp_update)
     t.start()
 
+    sensor_name = determine_sensor()
     try:
-        payload = {'db': "basecamp", 'q': "SELECT LAST(\"Tmp\") FROM \"muta\" WHERE unit='salon'"}
+        payload = {'db': "basecamp", 'q': "SELECT LAST(\"Tmp\") FROM \"muta\" WHERE unit='"+sensor_name+"'"}
         r = requests.get(influxdb_query_url, params=payload)
     except (requests.exceptions.RequestException, requests.exceptions.ConnectionError) as e:
         print(e.__str__())
         log.error(e.__str__())
-        requests.get(logbook_url, params={'log_type': "ERROR", 'machine': machine_name, 'service': service_name, 'message': "Problème d'accès influxdb!"})
+        requests.get(logbook_url, params={'log_type': "ERROR", 'machine': machine_name, 'service': service_name, 'message': "Problème d'accès influxdb!"},
+                     timeout=logbook_timeout)
     except:
         print("Unexpected error:", sys.exc_info()[0])
         log.error("Unexpected error:"+sys.exc_info()[0])
-        requests.get(logbook_url, params={'log_type': "ERROR", 'machine': machine_name, 'service': service_name, 'message': "Problème d'accès influxdb!"})
+        requests.get(logbook_url, params={'log_type': "ERROR", 'machine': machine_name, 'service': service_name, 'message': "Problème d'accès influxdb!"},
+                     timeout=logbook_timeout)
     else:
         res = r.json()["results"][0]["series"][0]["values"][0]
         timestamp = res[0]
         temp_in = float(res[1])
-        log.info("input temperature (muta.salon.Tmp) updated to: %.2f°C @ %s" % (temp_in, str(timestamp)))
+        log.info("input temperature (from sensor '%s') updated to: %.2f°C @ %s" % (sensor_name, temp_in, str(timestamp)))
 
         # ------------------------------------------------------------------------------------------
         # heating command update loop
         need_influxdb_update = False
         # check calendar & mode update
-        if (is_calendar_on_eco(calendrier)):
+        if (is_calendar_on_eco(calendar)):
             if (th_mode == ThMode.COMFORT):
                 log.info("switching to ECO mode")
                 th_mode = ThMode.ECO
@@ -197,7 +308,8 @@ def check_temp_update():
                 log.info("relay probe is HIGH")
                 # alarm if probe is not LOW
                 log.error("unable to reset heater relay, stopping here")
-                requests.get(logbook_url, params={'log_type': "ERROR", 'machine': machine_name, 'service': service_name, 'message': "Impossible d'ouvrir le relais!"})
+                requests.get(logbook_url, params={'log_type': "ERROR", 'machine': machine_name, 'service': service_name, 'message': "Impossible d'ouvrir le relais!"},
+                             timeout=logbook_timeout)
                 exit(1)
             else:
                 log.info("heater latching relay is OFF")
@@ -221,7 +333,8 @@ def check_temp_update():
                 log.info("relay probe is LOW")
                 # alarm if probe is not HIGH
                 log.error("unable to set heater relay, stopping here")
-                requests.get(logbook_url, params={'log_type': "ERROR", 'machine': machine_name, 'service': service_name, 'message': "Impossible de fermer le relais!"})
+                requests.get(logbook_url, params={'log_type': "ERROR", 'machine': machine_name, 'service': service_name, 'message': "Impossible de fermer le relais!"},
+                             timeout=logbook_timeout)
                 exit(1)
             # send alarm if probe not ok
             relay_out = 1
@@ -248,33 +361,65 @@ def do_status():
     global aimed_temp
     global temp_eco
     global temp_conf
-    global profile
+    global current_profile
     global profile_list
     if th_mode == ThMode.ECO:
         str_mode = "ECO"
     else:
         str_mode = "CONFORT"
-    status = {'profile': profile, 'profile_list': profile_list, 'temp_in': temp_in, 'relay_out': relay_out,
+    status = {'base_profile': base_profile, 'suppl_profile': suppl_profile, 'except_profile': except_profile,
+              'current_profile': current_profile, 'calendar': calendar, 'main_sensor_calendar': main_sensor_calendar,
+              'profile_list': profile_list, 'temp_in': temp_in, 'relay_out': relay_out,
               'th_mode': str_mode, 'temp_eco': temp_eco, 'temp_conf': temp_conf, 'aimed_temp': aimed_temp}
     return(status)
 
 
-@get('/set_profile')
-def do_set_profile():
-    global profile
+@get('/set_base_profile')
+def do_set_base_profile():
     global profile_list
-    global th_mode
-    m_profile = request.query.profile
-    if m_profile in profile_list:
-        profile = m_profile
-        read_profile_settings(profile)
-        if (is_calendar_on_eco(calendrier)):
-            th_mode = ThMode.ECO
-            log.info("th.: ECO mode")
-        else:
-            th_mode = ThMode.COMFORT
-            log.info("th.: COMFORT mode")
-        save_new_profile_to_ini()
+    global base_profile
+    if request.query.profile in profile_list:
+        base_profile = request.query.profile
+        update_ini()
+        check_applicable_profile()
+        return("OK")
+    else:
+        return("ERROR: profile not found")
+
+
+@get('/set_suppl_profile')
+def do_set_suppl_profile():
+    global profile_list
+    global suppl_profile
+    global suppl_expiration
+    global timezone
+    if request.query.profile in profile_list:
+        suppl_profile = request.query.profile
+        try:
+            suppl_expiration = maya.MayaDT.from_rfc2822(request.query.expiration+' '+timezone)
+        except:
+            return("ERROR: couldn't parse the expiration field. example: '2017-12-23 08:23:45'")
+        update_ini()
+        check_applicable_profile()
+        return("OK")
+    else:
+        return("ERROR: profile not found")
+
+
+@get('/set_except_profile')
+def do_set_except_profile():
+    global profile_list
+    global except_profile
+    global except_expiration
+    global timezone
+    if request.query.profile in profile_list:
+        except_profile = request.query.profile
+        try:
+            except_expiration = maya.MayaDT.from_rfc2822(request.query.expiration+' '+timezone)
+        except:
+            return("ERROR: couldn't parse the expiration field. example: '2017-12-23 08:23:45'")
+        update_ini()
+        check_applicable_profile()
         return("OK")
     else:
         return("ERROR: profile not found")
@@ -290,12 +435,29 @@ th_config = configparser.ConfigParser()
 th_config.read(service_name+".ini")
 logfile = th_config.get('main', 'logfile')
 logbook_url = th_config.get('main', 'logbook_url')
+logbook_timeout = th_config.getint('main', 'logbook_timeout')
 hostname = th_config.get('main', 'hostname')
 port = th_config.getint('main', 'port')
 wait_at_startup = th_config.getint('main', 'wait_at_startup')
 influxdb_host = th_config.get("influxdb", "influxdb_host")
 influxdb_port = th_config.get("influxdb", "influxdb_port")
 influxdb_query_url = "http://"+influxdb_host+":"+influxdb_port+"/query"
+base_profile = th_config.get("heating", "base_profile")
+suppl_profile = th_config.get("heating", "suppl_profile")
+suppl_expiration_txt = th_config.get("heating", "suppl_expiration")
+if (suppl_expiration_txt != ""):
+    suppl_expiration = maya.MayaDT.from_rfc3339(suppl_expiration_txt)
+else:
+    suppl_expiration = None
+except_profile = th_config.get("heating", "except_profile")
+except_expiration_txt = th_config.get("heating", "except_expiration")
+if (except_expiration_txt != ""):
+    except_expiration = maya.MayaDT.from_rfc3339(except_expiration_txt)
+else:
+    except_expiration = None
+main_sensor = th_config.get("heating", "main_sensor")
+secondary_sensor = th_config.get("heating", "secondary_sensor")
+timezone = th_config.get("main", "timezone")
 # also: getfloat, getint, getboolean
 
 # log
@@ -320,7 +482,8 @@ time.sleep(wait_at_startup)
 
 log.warning(service_name+" restarted")
 # send a restart info to logbook
-requests.get(logbook_url, params={'log_type': "WARNING", 'machine': machine_name, 'service': service_name, 'message': "redémarrage"})
+requests.get(logbook_url, params={'log_type': "WARNING", 'machine': machine_name, 'service': service_name, 'message': "redémarrage"},
+             timeout=logbook_timeout)
 
 # influxdb init
 client = InfluxDBClient(influxdb_host, influxdb_port)
@@ -335,49 +498,26 @@ influx_json_body = [
     }
 ]
 
-"""
-Heating configuration is base on a heating profile
-+   Profile are described in .ini files, in the profiles/ subdir
-    example (work_week):
-    [thermostat]
-    temp_eco=18.2
-    temp_conf=20.2
-    delta_temp_plus=0.10
-    delta_temp_minus=0.25
-    calendrier=[['07h00-08h00','16h30-22h00'],
-        ['07h00-08h00','16h30-22h00'],
-        ['07h00-22h00'],
-        ['07h00-08h00','16h30-22h00'],
-        ['07h00-08h00','16h30-22h00'],
-        ['07h00-22h00'],
-        ['07h00-22h00']]
-    It sets up the goal temperature for confort/eco modes, the hystheresis values,
-    and the schedule for confort mode
-The currently used profile is set in the heater.ini file.
-"""
-# default values for thermostat
+# default values for thermostat - will be overwritten at the next update
 relay_out = None
 temp_in = None
 temp_eco = 12
 temp_conf = 12
-calendrier = None
 delta_temp = 0.5
 aimed_temp = None
-# read the current profile
-profile = th_config.get("main", "profile")
-read_profile_settings(profile)
-if (is_calendar_on_eco(calendrier)):
-    th_mode = ThMode.ECO
-    log.info("th.: ECO mode")
-else:
-    th_mode = ThMode.COMFORT
-    log.info("th.: COMFORT mode")
+th_mode = ThMode.ECO
+current_profile = ""
+calendar = None
+
 # check the profiles list
 profile_list = []
 os.chdir("profiles/")
 for file in glob.glob("*.ini"):
     profile_list.append(file[:-4])
 os.chdir("..")
+
+# determine applicable profile & read it
+check_applicable_profile()
 
 # GPIO init
 GPIO.setmode(GPIO.BOARD)
@@ -407,30 +547,14 @@ else:
     log.info("heater latching relay is OFF")
 relay_out = 0
 
-"""
-# ZMQ init
-context = zmq.Context()
-# muta PUB channel
-socket_pub = context.socket(zmq.PUB)
-socket_pub.connect("tcp://192.168.1.50:5000")
-log.info("ZMQ connect: PUB on tcp://192.168.1.50:5000")
-# muta SUB channel
-socket_sub = context.socket(zmq.SUB)
-socket_sub.connect("tcp://192.168.1.50:5001")
-topicfilter = "basecamp.muta.update"
-socket_sub.setsockopt(zmq.SUBSCRIBE, topicfilter)
-log.debug("ZMQ connect: SUB on tcp://192.168.1.50:5001")
-# give ZMQ some time to setup the channels
-time.sleep(1)
-poller = zmq.Poller()
-poller.register(socket_sub, zmq.POLLIN)
-"""
 
 # =======================================================
 # main loop
 
 t = Timer(1.0, check_temp_update)
 t.start()
+
 t2 = Timer(5*60.0, timer_export_influxdb)
 t2.start()
+
 run(host=hostname, port=port)

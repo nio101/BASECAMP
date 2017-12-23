@@ -101,14 +101,14 @@ if (args.deploy):
             source_path = "../"+package["package"]+"/*"
             dest_path = machine+":"+package["destination"]
             print("%s:\tcopying %s to %s..." % (machine, source_path, dest_path))
-            p = subprocess.Popen(["scp", "-r", source_path, dest_path])
+            p = subprocess.Popen(["scp -r "+source_path+" "+dest_path], shell=True)
             sts = p.wait()
 
             for ini_file in package["ini"]:
                 source_path = "../"+private_ini_dir+"/"+ini_file
                 dest_path = machine+":"+package["destination"]
                 print("%s:\tcopying %s to %s..." % (machine, source_path, dest_path))
-                p = subprocess.Popen(["scp", source_path, dest_path])
+                p = subprocess.Popen(["scp -r "+source_path+" "+dest_path], shell=True)
                 sts = p.wait()
         print()
 
@@ -121,7 +121,7 @@ if (args.deploy):
             dest_path = machine+":~/supervisord.conf"
             source_path = filename
             print("%s:\tcopying %s to %s..." % (machine, source_path, dest_path))
-            p = subprocess.Popen(["scp", source_path, dest_path])
+            p = subprocess.Popen(["scp -r "+source_path+" "+dest_path], shell=True)
             sts = p.wait()
         else:
             print(Fore.YELLOW+"!!! WARNING: not found: "+filename+" !!!"+Fore.GREEN)

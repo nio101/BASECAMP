@@ -2,32 +2,45 @@
 
 ## Todo
 
-Pour bc-watch, bc-hq et bc-annex:
+_tools:
+- [ ] utiliser un makefile
+pour déployer, pécho les ini, redémarrer les machines, les MAJ, et faire un 
+process pour MAJ le pip3 ainsi que les modules python:
 
-- [ ] mettre des temporisations au début des scripts pour water+SMS, pour laisser le temps de monter le réseau (wifi pour l'un, SMS pour l'autre), et augmenter les retries dans supervisord.conf
+sudo pip3 install -U --force-reinstall pip setuptools wheel
+pip3 list -o
+sudo pip3 install -U <liste outdated modules>
+  ou
+pip freeze > requirements.txt
+pip install -r requirements.txt --upgrade
+
+SMS_operator:
+- [ ] exporter la qualité de signal GSM?
+
+NightWatchdog ou watchdog:
+- [ ] chauffage: mettre une alerte/info si confort pendant la nuit (oubli force_confort?) ou mettre durée d'application du force_confort!
+
+tous:
+- [ ] quand il se passe ça: `requests.exceptions.ConnectionError: ('Connection aborted.', OSError(101, 'Network is unreachable'))`, le script doit quitter en erreur (exit(x)) et laisser supervisor relancer/prendre une décision/alerter
+- [ ] mettre des try sur toutes les dépendances externes, et logger en local si problème + avertir en distant via logbook si dispo, et c'est tout + mettre des timeouts sur toutes les requêtes requests.get, car par défaut => infinite time!
+
+
 - [ ] mettre une clé privée/publique sur bc-watch pour faire des ssh sur les autres machines (reboot & autres?)?
 - [ ] Tablette en veille quaxnd absent ou dort, allumée sinon comme cadre photo avec flickr-groupe chouette du japon! le tout par
-- [ ] mettre le début du chauffage à 6h30 le matin
 - [ ] ajouter alarme quand heater ne recoit pas d'update de température du salon depuis X minutes (avec reset)
 - [ ] quand coupure de courant, si bc-watch pas accessible, les autres services ne démarrent pas (logbook pas accessible => erreur). => fiabiliser watch 
 - [ ] Ajouter le monitoring du secteur avec désactivation du watchdog quand le secteur est perdu & réactivation après tempo quand il revient. Notifications par SMS si problème secteur, par pushover si problème watchdog (mais limiter le nombre de message pour ne pas flooder / boucles)
 - [ ] envisager de remonter automatiquement la consommation en utilisant python/scheduler
-- [ ] chauffage: mettre une alerte/info si confort pendant la nuit (oubli force_confort?) ou mettre durée d'application du force_confort!
 - [ ] tester snowboy & la reconnaissance de hotword/word hotspotting
 - [ ] coupler avec la lightbox, qui devra être installée derrière l'écran
 - [ ] watchdog => implement a watchod service testing that regularly pings every machine+service using ping/http-alive/zmq-alive, alert if any problem, offers detailed results via HTTP + logbook agreggation on dedicated page.
 - [ ] bug: si perte secteur (plus d'ethernet ni internet) et que secteur revient => bc-watch n'est plus accessible par réseau!?!
 - [ ] améliorer monitoring: sur l'UI, avoir une interface vers les logs applicatifs de n'importe quel service, en plus des infos données par le _watchdog-master_. + prévoir des infos d'espace disque de chaque machine (df -h avec % important) => watchdog avec notif
 - [ ] check restart auto des machines après coupure de courant: ex. de bc-hq qui ne repart pas... :( voir réglages BIOS comme bc-ui + utiliser wakeonlan depuis bc-watch si nécessaire?
-- [ ] bug: si on perd zmq_forwarder, et qu'on le remet après, les subscribers ne recoivent pas les messages, il faut les relancer! (idem pour les publishers?) => en tenir compte pour chaque watchdog de machine. Heater & interphone HS. autres en envoi? Trouver solution chouette pour assurer une reprise/reset ZMQ régulièrement ou si perdu
 - [ ] bug: bc-hq planté, plus d'accès réseau. cause?
-- [ ] faire un schéma ppt pour savoir qui utilise zmq, et qui utilise http
-- [ ] décaler dans le temps le démarrage de ZMQ et des autres services => configuration supervisord
 - [ ] watch: ajouter un check quotidien qui scanne la consommation d'eau à l'heure et qui vérifie qu'elle a été nulle au moins une fois sur les dernières 24h => détection fuite d'eau!
 - [ ] watch: check de la dernière MAJ des capteurs MUTA... si > 15mn, par exemple => alarme (monter à 30mn au besoin)
 - [ ] vérifier le statut du wifi et du bluetooth sur chaque device + fermer là où c'est attendu + check reboot-proof.
-- [x] archiver zmq forwarder & virer l'usage de ZMQ: operator, heater, interphone (+veilleuse+scheduler). Interphone: http, heater: scan influxdb régulier (30sec), operator: influxdb en sortie, désactiver l'entrée pour l'instant. Mécanisme IPC
-- [ ] quand il se passe ça: `requests.exceptions.ConnectionError: ('Connection aborted.', OSError(101, 'Network is unreachable'))`, le script doit quitter en erreur (exit(x)) et laisser supervisor relancer/prendre une décision/alerter
 
 ## Basecamp UI
 
