@@ -1,8 +1,0 @@
-# sudo pip install -r requirements.txt
-bottle
-requests
-httpie
-# umsgpack
-# zmq
-configparser
-# gevent

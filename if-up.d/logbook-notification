@@ -17,7 +17,7 @@ case "$IFACE" in
 
 	# here, do the real work.
 	# requires httpie
-	/usr/local/bin/http GET 192.168.1.54:8082/add_to_logbook machine=="bc-power" service=="" message=="redémarrage"
+	/usr/local/bin/http GET 192.168.1.54:8082/add_to_logbook log_type=="WARNING" machine=="bc-power" service=="OS" message=="Restarting..."
     ;;
 
     *)

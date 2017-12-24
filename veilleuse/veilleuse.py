@@ -24,6 +24,18 @@ UT.unexport_all()
 
 
 # =======================================================
+# helpers
+
+def send_to_logbook(log_type, msg):
+    try:
+        requests.get(logbook_url, params={'log_type': log_type, 'machine': machine_name, 'service': service_name, 'message': msg},
+                     timeout=logbook_timeout)
+    except Exception as e:
+        log.error(e.__str__())
+        log.error("*** ERROR reaching logbook on "+str(logbook_url)+" ***")
+
+
+# =======================================================
 # init
 service_name = re.search("([^\/]*)\.py", sys.argv[0]).group(1)
 machine_name = socket.gethostname()
@@ -33,6 +45,7 @@ th_config = configparser.ConfigParser()
 th_config.read(service_name+".ini")
 logfile = th_config.get('main', 'logfile')
 logbook_url = th_config.get('main', 'logbook_url')
+logbook_timeout = th_config.getint('main', 'logbook_url')
 thresh_low = th_config.getint('main', 'thresh_low')
 thresh_high = th_config.getint('main', 'thresh_high')
 influxdb_query_url = th_config.get('main', 'influxdb_query_url')
@@ -80,7 +93,7 @@ else:
     current_state = 0
 
 # send a restart info to logbook
-requests.get(logbook_url, params={'log_type': "WARNING", 'machine': machine_name, 'service': service_name, 'message': "redémarrage"})
+send_to_logbook("WARNING", "Restarting...")
 
 while True:
     # process/evaluate the last light outdoor value every 5mn
@@ -88,9 +101,8 @@ while True:
         payload = {'db': "basecamp", 'q': "SELECT LAST(\"Lit\") FROM \"muta\" WHERE unit='jardin'"}
         r = requests.get(influxdb_query_url, params=payload)
     except requests.exceptions.RequestException as e:
-        print(e.__str__())
         log.error(e.__str__())
-        requests.get(logbook_url, params={'log_type': "ERROR", 'machine': machine_name, 'service': service_name, 'message': "Problème d'accès influxdb!"})
+        send_to_logbook("ERROR", "Can't reach InfluxDB!")
     else:
         res = r.json()["results"][0]["series"][0]["values"][0]
         light_value = res[1]
@@ -103,12 +115,15 @@ while True:
             # check it!
             if GPIO.input(probe):
                 log.error("lights are ON, but they shouldn't be!")
-                requests.get(logbook_url, params={'log_type': "ERROR", 'machine': machine_name, 'service': service_name, 'message': "Problème relais détecté."})
+                send_to_logbook("ERROR", "Relay problem: lights are ON, but they shouldn't be!")
                 current_state = 1
             else:
                 log.info("lights are OFF")
-                requests.get(logbook_url, params={'log_type': "INFO", 'machine': machine_name, 'service': service_name, 'message': "extinction de la veilleuse"})
-                requests.get(interphone_url, params={'service': service_name, 'announce': "Le jour est levé... Bonne journée!"})
+                send_to_logbook("INFO", "Extinction de la veilleuse de nuit.")
+                try:
+                    requests.get(interphone_url, params={'service': service_name, 'announce': "Nico, le jour s'est levé... Bonne journée!"})
+                except:
+                    send_to_logbook("ERROR", "Can't reach interphone on "+interphone_url)
                 current_state = 0
         elif (current_state == 0) and (light_value < thresh_low):
             # lights should be ON
@@ -119,11 +134,14 @@ while True:
             # check it!
             if GPIO.input(probe):
                 log.info("lights are ON")
-                requests.get(logbook_url, params={'log_type': "INFO", 'machine': machine_name, 'service': service_name, 'message': "allumage de la veilleuse"})
-                requests.get(interphone_url, params={'service': service_name, 'announce': "La nuit est tombée... Bonne soirée!"})
+                send_to_logbook("INFO", "Allumage de la veilleuse de nuit.")
+                try:
+                    requests.get(interphone_url, params={'service': service_name, 'announce': "Nico, La nuit est tombée... Bonne soirée!"})
+                except:
+                    send_to_logbook("ERROR", "Can't reach interphone on "+interphone_url)
                 current_state = 1
             else:
                 log.error("lights are OFF, but they shouldn't be!")
-                requests.get(logbook_url, params={'log_type': "ERROR", 'machine': machine_name, 'service': service_name, 'message': "Problème relais détecté."})
+                send_to_logbook("ERROR", "Relay problem: lights are OFF, but they shouldn't be!")
                 current_state = 0
     sleep(5*60)

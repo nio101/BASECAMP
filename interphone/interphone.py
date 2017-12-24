@@ -27,6 +27,15 @@ import time
 # =======================================================
 # helpers
 
+def send_to_logbook(log_type, msg):
+    try:
+        requests.get(logbook_url, params={'log_type': log_type, 'machine': machine_name, 'service': service_name, 'message': msg},
+                     timeout=logbook_timeout)
+    except Exception as e:
+        log.error(e.__str__())
+        log.error("*** ERROR reaching logbook on "+str(logbook_url)+" ***")
+
+
 def download_file(url):
     # local_filename = url.split('/')[-1]
     local_filename = "last_announce.wav"
@@ -139,6 +148,7 @@ def do_set_profile():
         os.remove(local_wav)
         return("OK")
     else:
+        send_to_logbook("ERROR", "ERROR getting the TTS file from "+tts_url)
         return("ERROR getting the TTS file from "+tts_url)
 
 
@@ -152,6 +162,7 @@ th_config = configparser.ConfigParser()
 th_config.read(service_name+".ini")
 logfile = th_config.get('main', 'logfile')
 logbook_url = th_config.get('main', 'logbook_url')
+logbook_timeout = th_config.getint('main', 'logbook_timeout')
 tts_url = th_config.get('main', 'tts_url')
 wait_at_startup = th_config.getint('main', 'wait_at_startup')
 keys_lifespan = th_config.getint('http', 'lifespan')
@@ -181,7 +192,7 @@ log.addHandler(ch)
 log.warning(service_name+" is (re)starting !")
 time.sleep(wait_at_startup)
 # send a restart info to logbook
-requests.get(logbook_url, params={'log_type': "WARNING", 'machine': machine_name, 'service': service_name, 'message': "redémarrage"})
+send_to_logbook("WARNING", "Restarting...")
 
 # =======================================================
 # main stuff

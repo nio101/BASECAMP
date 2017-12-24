@@ -30,6 +30,14 @@ import socket
 
 # =======================================================
 
+def send_to_logbook(log_type, msg):
+    try:
+        requests.get(logbook_url, params={'log_type': log_type, 'machine': machine_name, 'service': service_name, 'message': msg},
+                     timeout=logbook_timeout)
+    except Exception as e:
+        log.error(e.__str__())
+        log.error("*** ERROR reaching logbook on "+str(logbook_url)+" ***")
+
 
 def export_metrics():
     """
@@ -56,10 +64,9 @@ def export_metrics():
         try:
             client.write_points(influx_json_body)
         except Exception as e:
-            print(e.__str__())
-            log.error(e)
+            log.error(e.__str__())
             log.error("Error reaching infludb on "+str(influxdb_host)+":"+str(influxdb_port))
-            requests.get(logbook_url, params={'log_type': "ERROR", 'machine': machine_name, 'service': service_name, 'message': "Impossible d'accéder à influxdb!"})
+            send_to_logbook("ERROR", "Can't reach InfluxDB!")
     else:
         log.warning("nothing to export!")
     t = Timer(2*60.0, export_metrics)
@@ -76,6 +83,7 @@ th_config = configparser.ConfigParser()
 th_config.read(service_name+".ini")
 logfile = th_config.get('main', 'logfile')
 logbook_url = th_config.get('main', 'logbook_url')
+logbook_timeout = th_config.getint('main', 'logbook_timeout')
 wait_at_startup = th_config.getint('main', 'wait_at_startup')
 influxdb_host = th_config.get("influxdb", "influxdb_host")
 influxdb_port = th_config.get("influxdb", "influxdb_port")
@@ -102,7 +110,7 @@ log.addHandler(ch)
 log.warning(service_name+" is (re)starting !")
 time.sleep(wait_at_startup)
 # send a restart info to logbook
-requests.get(logbook_url, params={'log_type': "WARNING", 'machine': machine_name, 'service': service_name, 'message': "redémarrage"})
+send_to_logbook("WARNING", "Restarting...")
 
 # influxdb init
 client = InfluxDBClient(influxdb_host, influxdb_port)
@@ -126,8 +134,6 @@ last_index = None
 
 # =======================================================
 # main loop
-
-# TODO: use scheduler to send regularly the aimed_temp+relay_out values to influxdb
 
 t = Timer(2*60.0, export_metrics)
 t.start()

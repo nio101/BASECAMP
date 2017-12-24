@@ -15,7 +15,6 @@ import logging.handlers
 import configparser
 import requests
 # from threading import *
-import zmq
 import time
 import schedule
 import socket
@@ -30,6 +29,15 @@ except RuntimeError:
 
 
 # =======================================================
+# helpers
+
+def send_to_logbook(log_type, msg):
+    try:
+        requests.get(logbook_url, params={'log_type': log_type, 'machine': machine_name, 'service': service_name, 'message': msg},
+                     timeout=logbook_timeout)
+    except Exception as e:
+        log.error(e.__str__())
+        log.error("*** ERROR reaching logbook on "+str(logbook_url)+" ***")
 
 
 class T_power_status:   # reflects the current power state
@@ -38,6 +46,7 @@ class T_power_status:   # reflects the current power state
 
 # =======================================================
 # init
+
 service_name = re.search("([^\/]*)\.py", sys.argv[0]).group(1)
 machine_name = socket.gethostname()
 # .ini
@@ -45,6 +54,7 @@ th_config = configparser.ConfigParser()
 th_config.read(service_name+".ini")
 logfile = th_config.get('main', 'logfile')
 logbook_url = th_config.get('main', 'logbook_url')
+logbook_timeout = th_config.getint('main', 'logbook_timeout')
 wait_at_startup = th_config.getint('main', 'wait_at_startup')
 # also: getfloat, getint, getboolean
 
@@ -63,23 +73,6 @@ log.addHandler(fh)
 
 log.warning(service_name+" is (re)starting !")
 time.sleep(wait_at_startup)
-
-# ZMQ init
-context = zmq.Context()
-# muta PUB channel
-socket_pub = context.socket(zmq.PUB)
-socket_pub.connect("tcp://bc-hq.local:5000")
-log.info("ZMQ connect: PUB on tcp://bc-hq.local:5000")
-# muta SUB channel
-socket_sub = context.socket(zmq.SUB)
-socket_sub.connect("tcp://127.0.0.1:5001")
-topicfilter = "basecamp.interphone.announce"
-socket_sub.setsockopt(zmq.SUBSCRIBE, topicfilter)
-log.debug("ZMQ connect: SUB on tcp://127.0.0.1:5001")
-# give ZMQ some time to setup the channels
-time.sleep(1)
-poller = zmq.Poller()
-poller.register(socket_sub, zmq.POLLIN)
 
 # GPIO init
 GPIO.setmode(GPIO.BOARD)
@@ -109,10 +102,7 @@ else:
     log.info("heater latching relay is OFF")
 relay_out = 0
 
-# send a restart info on pushover
-# requests.get(pushover_url, params = {'text': "le service "+service_name+" a redémarré..."})
-requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "le service a redémarré!"})
-
+send_to_logbook("WARNING", "Restarting...")
 # =======================================================
 # main loop
 

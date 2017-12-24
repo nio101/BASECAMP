@@ -11,13 +11,10 @@ note:   webserver may not be multi-threaded/non-blocking.
         if needed, use bottle with gunicorn for example.
 """
 
-import bottle
 from bottle import run, request, get
 import logging
 import logging.handlers
 import configparser
-import re
-import sys
 import socket
 from influxdb import InfluxDBClient
 import datetime
@@ -26,7 +23,7 @@ import requests
 
 # =======================================================
 # init
-#service_name = re.search("([^\/]*)\.py", sys.argv[0]).group(1)
+# service_name = re.search("([^\/]*)\.py", sys.argv[0]).group(1)
 service_name = "logbook"
 machine_name = socket.gethostname()
 
@@ -79,9 +76,9 @@ influx_json_body = [
 # add its own restart info
 log.info("WARNING [%s] [%s] : redémarrage" % (machine_name, service_name))
 
+
 # =======================================================
 # Helpers
-
 
 def add_to_influxdb(log_type, machine, service, message):
     influx_json_body[0]['time'] = datetime.datetime.utcnow().isoformat()
@@ -95,11 +92,14 @@ def add_to_influxdb(log_type, machine, service, message):
         log.error(e)
         log.error("ERROR reaching infludb on "+str(influxdb_host)+":"+str(influxdb_port))
         # requests.get(sms_url, params={'msisdn': admin_msisdn, 'text': "ERREUR! impossible d'accéder à influxdb!"}, timeout=sms_timeout)
-        requests.get(pushover_url, params={'text': "ERREUR! impossible d'accéder à influxdb!"}, timeout=pushover_timeout)
+        try:
+            requests.get(pushover_url, params={'text': "ERREUR! impossible d'accéder à influxdb!"}, timeout=pushover_timeout)
+        except:
+            log.error("ERROR trying to reach pushover at:"+pushover_url)
+
 
 # =======================================================
 # URL handlers
-
 
 @get('/alive')
 def do_alive():
@@ -122,10 +122,16 @@ def do_add():
         return "ERROR: message field should NOT be None"
     log.info("%s [%s] [%s] : %s" % (log_type, machine, service, message))
     if (log_type != "DEBUG"):
-        add_to_influxdb(log_type, machine, service, message)
-        requests.get(pushover_url, params={'text': "%s [%s] [%s] : %s" % (log_type, machine, service, message)}, timeout=pushover_timeout)
+        add_to_influxdb(log_type, machine, service, message)        
+        try:
+            requests.get(pushover_url, params={'text': "%s [%s] [%s] : %s" % (log_type, machine, service, message)}, timeout=pushover_timeout)
+        except:
+            log.error("ERROR trying to reach pushover at:"+pushover_url)
         if (log_type == "ALARM"):
-            requests.get(sms_url, params={'msisdn': admin_msisdn, 'text': "%s [%s] [%s] : %s" % (log_type, machine, service, message)}, timeout=sms_timeout)
+            try:
+                requests.get(sms_url, params={'msisdn': admin_msisdn, 'text': "%s [%s] [%s] : %s" % (log_type, machine, service, message)}, timeout=sms_timeout)
+            except:
+                log.error("ERROR trying to reach SMS_operator at:"+sms_url)
     return "OK"
 
 
@@ -143,6 +149,7 @@ def do_get():
         res += line
     res += "</pre></html>"
     return res
+
 
 # =======================================================
 # main loop

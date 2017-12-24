@@ -14,14 +14,12 @@ sudo pip3 install -U <liste outdated modules>
 pip freeze > requirements.txt
 pip install -r requirements.txt --upgrade
 
-SMS_operator:
-- [ ] exporter la qualité de signal GSM?
-
 NightWatchdog ou watchdog:
 - [ ] chauffage: mettre une alerte/info si confort pendant la nuit (oubli force_confort?) ou mettre durée d'application du force_confort!
++ idem si des métriques majeures/critiques sont trop vieilles... => problème!
 
 tous:
-- [ ] quand il se passe ça: `requests.exceptions.ConnectionError: ('Connection aborted.', OSError(101, 'Network is unreachable'))`, le script doit quitter en erreur (exit(x)) et laisser supervisor relancer/prendre une décision/alerter
+- [ ] mettre le script up.d pour notifier un restart OS/machine
 - [ ] mettre des try sur toutes les dépendances externes, et logger en local si problème + avertir en distant via logbook si dispo, et c'est tout + mettre des timeouts sur toutes les requêtes requests.get, car par défaut => infinite time!
 
 

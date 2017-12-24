@@ -39,6 +39,15 @@ except RuntimeError:
 # =======================================================
 
 
+def send_to_logbook(log_type, msg):
+    try:
+        requests.get(logbook_url, params={'log_type': log_type, 'machine': machine_name, 'service': service_name, 'message': msg},
+                     timeout=logbook_timeout)
+    except Exception as e:
+        log.error(e.__str__())
+        log.error("*** ERROR reaching logbook on "+str(logbook_url)+" ***")
+
+
 class ThMode:   # ThMode reflects the current heating mode
     ECO, COMFORT = range(2)
 
@@ -99,9 +108,7 @@ def notify(msg):
     proper notification tryout
     """
     log.info(msg)
-    requests.get(logbook_url, params={'log_type': "INFO", 'machine': machine_name, 'service': service_name, 'message': msg},
-                 timeout=logbook_timeout)
-    # also send to the logbook!
+    send_to_logbook("INFO", msg)
 
 
 def read_profile_settings(name):
@@ -214,11 +221,9 @@ def export_to_influxdb():
         try:
             client.write_points(influx_json_body)
         except Exception as e:
-            print(e.__str__())
-            log.error(e)
+            log.error(e.__str__())
             log.error("Error reaching infludb on "+str(influxdb_host)+":"+str(influxdb_port))
-            requests.get(logbook_url, params={'log_type': "ERROR", 'machine': machine_name, 'service': service_name, 'message': "Impossible d'accéder à influxdb!"},
-                         timeout=logbook_timeout)
+            send_to_logbook("ERROR", "Can't reach influxdb!")
 
 
 # =======================================================
@@ -249,15 +254,11 @@ def check_temp_update():
         payload = {'db': "basecamp", 'q': "SELECT LAST(\"Tmp\") FROM \"muta\" WHERE unit='"+sensor_name+"'"}
         r = requests.get(influxdb_query_url, params=payload)
     except (requests.exceptions.RequestException, requests.exceptions.ConnectionError) as e:
-        print(e.__str__())
         log.error(e.__str__())
-        requests.get(logbook_url, params={'log_type': "ERROR", 'machine': machine_name, 'service': service_name, 'message': "Problème d'accès influxdb!"},
-                     timeout=logbook_timeout)
+        send_to_logbook("ERROR", "Can't reach influxdb!")
     except:
-        print("Unexpected error:", sys.exc_info()[0])
         log.error("Unexpected error:"+sys.exc_info()[0])
-        requests.get(logbook_url, params={'log_type': "ERROR", 'machine': machine_name, 'service': service_name, 'message': "Problème d'accès influxdb!"},
-                     timeout=logbook_timeout)
+        send_to_logbook("ERROR", "Can't reach influxdb!")
     else:
         res = r.json()["results"][0]["series"][0]["values"][0]
         timestamp = res[0]
@@ -272,18 +273,10 @@ def check_temp_update():
             if (th_mode == ThMode.COMFORT):
                 log.info("switching to ECO mode")
                 th_mode = ThMode.ECO
-                # log.debug("sending (ORDERS): basecamp_HQ_heater_info, {'mode':'ECO'}")
-                # msg = msgpack.packb(["basecamp_HQ_heater_info","{'mode':'ECO'}"])
-                # socket_orders.send(msg)
-                # TODO: update influxdb with basecamp/heater/goal_temp = temp for ECO mode
         else:
             if (th_mode == ThMode.ECO):
                 log.info("switching to COMFORT mode")
                 th_mode = ThMode.COMFORT
-                # log.debug("sending (ORDERS): basecamp_HQ_heater_info, {'mode':'COMFORT'}")
-                # msg = msgpack.packb(["basecamp_HQ_heater_info","{'mode':'COMFORT'}"])
-                # socket_orders.send(msg)
-                # TODO: update influxdb with basecamp/heater/goal_temp = temp for ECO mode
         # aimed and delta
         if (th_mode == ThMode.ECO):
             new_aimed_temp = float(temp_eco)
@@ -308,8 +301,7 @@ def check_temp_update():
                 log.info("relay probe is HIGH")
                 # alarm if probe is not LOW
                 log.error("unable to reset heater relay, stopping here")
-                requests.get(logbook_url, params={'log_type': "ERROR", 'machine': machine_name, 'service': service_name, 'message': "Impossible d'ouvrir le relais!"},
-                             timeout=logbook_timeout)
+                send_to_logbook("ERROR", "Unable to reset heater relay!")
                 exit(1)
             else:
                 log.info("heater latching relay is OFF")
@@ -333,8 +325,7 @@ def check_temp_update():
                 log.info("relay probe is LOW")
                 # alarm if probe is not HIGH
                 log.error("unable to set heater relay, stopping here")
-                requests.get(logbook_url, params={'log_type': "ERROR", 'machine': machine_name, 'service': service_name, 'message': "Impossible de fermer le relais!"},
-                             timeout=logbook_timeout)
+                send_to_logbook("ERROR", "Unable to set heater relay!")
                 exit(1)
             # send alarm if probe not ok
             relay_out = 1
@@ -370,7 +361,8 @@ def do_status():
     status = {'base_profile': base_profile, 'suppl_profile': suppl_profile, 'except_profile': except_profile,
               'current_profile': current_profile, 'calendar': calendar, 'main_sensor_calendar': main_sensor_calendar,
               'profile_list': profile_list, 'temp_in': temp_in, 'relay_out': relay_out,
-              'th_mode': str_mode, 'temp_eco': temp_eco, 'temp_conf': temp_conf, 'aimed_temp': aimed_temp}
+              'th_mode': str_mode, 'temp_eco': temp_eco, 'temp_conf': temp_conf, 'aimed_temp': aimed_temp,
+              'suppl_expiration': suppl_expiration.slang_time(), 'except_expiration': except_expiration.slang_time()}
     return(status)
 
 
@@ -482,8 +474,7 @@ time.sleep(wait_at_startup)
 
 log.warning(service_name+" restarted")
 # send a restart info to logbook
-requests.get(logbook_url, params={'log_type': "WARNING", 'machine': machine_name, 'service': service_name, 'message': "redémarrage"},
-             timeout=logbook_timeout)
+send_to_logbook("WARNING", "Restarting...")
 
 # influxdb init
 client = InfluxDBClient(influxdb_host, influxdb_port)

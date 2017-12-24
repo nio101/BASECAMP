@@ -24,6 +24,18 @@ import time
 
 
 # =======================================================
+# helpers
+
+def send_to_logbook(log_type, msg):
+    try:
+        requests.get(logbook_url, params={'log_type': log_type, 'machine': machine_name, 'service': service_name, 'message': msg},
+                     timeout=logbook_timeout)
+    except Exception as e:
+        log.error(e.__str__())
+        log.error("*** ERROR reaching logbook on "+str(logbook_url)+" ***")
+
+
+# =======================================================
 # init
 service_name = re.search("([^\/]*)\.py", sys.argv[0]).group(1)
 machine_name = socket.gethostname()
@@ -37,6 +49,7 @@ port = th_config.getint('main', 'port')
 app_token = th_config.get('main', 'app_token')
 user_token = th_config.get('main', 'user_token')
 logbook_url = th_config.get('main', 'logbook_url')
+logbook_timeout = th_config.getint('main', 'logbook_timeout')
 wait_at_startup = th_config.getint('main', 'wait_at_startup')
 # also: getfloat, getint, getboolean
 
@@ -60,7 +73,7 @@ log.addHandler(ch)
 
 log.warning(service_name+" is (re)starting !")
 time.sleep(wait_at_startup)
-requests.get(logbook_url, params={'log_type': "WARNING", 'machine': machine_name, 'service': service_name, 'message': "redémarrage"})
+send_to_logbook("WARNING", "Restarting...")
 
 # =======================================================
 # URL handlers

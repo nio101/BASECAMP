@@ -4,11 +4,8 @@
 """
 scheduler service
 
-dependencies: s, interphone
-
-(python2 ONLY - due to ZMQ/msgpack unicode handling)
+dependencies: logbook, interphone
 """
-
 
 import logging
 import logging.handlers
@@ -22,6 +19,18 @@ import socket
 
 
 # =======================================================
+# helpers
+
+def send_to_logbook(log_type, msg):
+    try:
+        requests.get(logbook_url, params={'log_type': log_type, 'machine': machine_name, 'service': service_name, 'message': msg},
+                     timeout=logbook_timeout)
+    except Exception as e:
+        log.error(e.__str__())
+        log.error("*** ERROR reaching logbook on "+str(logbook_url)+" ***")
+
+
+# =======================================================
 # init
 service_name = re.search("([^\/]*)\.py", sys.argv[0]).group(1)
 machine_name = socket.gethostname()
@@ -31,6 +40,7 @@ th_config = configparser.ConfigParser()
 th_config.read(service_name+".ini")
 logfile = th_config.get('main', 'logfile')
 logbook_url = th_config.get('main', 'logbook_url')
+logbook_timeout = th_config.getint('main', 'logbook_timeout')
 interphone_url = th_config.get('main', 'interphone_url')
 wait_at_startup = th_config.getint('main', 'wait_at_startup')
 # also: getfloat, getint, getboolean
@@ -56,20 +66,20 @@ log.addHandler(ch)
 log.warning(service_name+" is (re)starting !")
 time.sleep(wait_at_startup)
 # send a restart info to logbook
-requests.get(logbook_url, params={'log_type': "WARNING", 'machine': machine_name, 'service': service_name, 'message': "redémarrage"})
+send_to_logbook("WARNING", "Restarting...")
+
 
 # =======================================================
 # time announce job
 
-
 def job(h, m):
     # ajouter des conditions:
-    # si on est en mode absent, couché ou silence, pas d'annonce!
     if (m == "00"):
         announce = "Nico! Il est déjà "+h+"h!"
     else:
         announce = "Nico! Il est déjà "+h+"h"+m+"!"
     requests.get(interphone_url, params={'service': service_name, 'announce': announce})
+
 
 # =======================================================
 # main stuff

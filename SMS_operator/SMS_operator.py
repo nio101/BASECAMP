@@ -4,7 +4,7 @@
 """
 Basecamp web_server sample skeleton
 
-dependencies: GSM modem with SIM card, s
+dependencies: GSM modem with SIM card, logbook
 
 (python2/python3 compatible)
 note:   webserver may not be multi-threaded/non-blocking.
@@ -26,6 +26,18 @@ import time
 
 
 # =======================================================
+# helpers
+
+def send_to_logbook(log_type, msg):
+    try:
+        requests.get(logbook_url, params={'log_type': log_type, 'machine': machine_name, 'service': service_name, 'message': msg},
+                     timeout=logbook_timeout)
+    except Exception as e:
+        log.error(e.__str__())
+        log.error("*** ERROR reaching logbook on "+str(logbook_url)+" ***")
+
+
+# =======================================================
 # init
 service_name = re.search("([^\/]*)\.py", sys.argv[0]).group(1)
 machine_name = socket.gethostname()
@@ -39,7 +51,9 @@ port = th_config.getint('main', 'port')
 allowed_msisdn = map(lambda s: s.strip('\''), th_config.get('main', 'allowed_msisdn').split(','))
 gammu_config_filename = th_config.get('main', 'gammu_config_filename')
 logbook_url = th_config.get('main', 'logbook_url')
+logbook_timeout = th_config.getint('main', 'logbook_timeout')
 wait_at_startup = th_config.getint('main', 'wait_at_startup')
+max_failed_SMS_checks = th_config.getint('main', 'max_failed_SMS_checks')
 # also: getfloat, getint, getboolean
 
 # log
@@ -64,7 +78,7 @@ log.warning(service_name+" is (re)starting !")
 time.sleep(wait_at_startup)
 
 # send a restart info to logbook
-requests.get(logbook_url, params={'log_type': "WARNING", 'machine': machine_name, 'service': service_name, 'message': "redémarrage"})
+send_to_logbook("WARNING", "Restarting...")
 
 # Create state machine object
 sm = gammu.StateMachine()
@@ -77,8 +91,7 @@ except Exception as e:
     print(e.__str__())
     log.error(e)
     log.error("Erreur init GAMMU, sm.Init() failed")
-    # not! would create an infinite loop!
-    # requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "Erreur init GAMMU, sm.Init() failed!"})
+    # Don't write an ERROR to logbook! would create an infinite loop!
     exit(0)
 # Reads network information from phone
 netinfo = sm.GetNetworkInfo()
@@ -86,16 +99,15 @@ netinfo = sm.GetNetworkInfo()
 network_code = netinfo['NetworkCode']
 if (network_code != '208 01') and (network_code != '208 02'):
     log.error("no registered mobile network, network code:'%s'" % network_code)
-    # not! would create an infinite loop!
-    # requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "ERREUR! no registered mobile network"})
+    # Don't write an ERROR to logbook! would create an infinite loop!
     exit(1)
 signal_level = sm.GetSignalQuality()['SignalPercent']
 if (signal_level < 30):
     log.warning("mobile network signal level is LOW: %i" % signal_level)
-    requests.get(logbook_url, params={'log_type': "WARNING", 'machine': machine_name, 'service': service_name, 'message': "WARNING! mobile network signal level is LOW: "+str(signal_level)})
+    send_to_logbook("WARNING", "Mobile network signal level is LOW: "+str(signal_level))
 else:
     log.info("mobile network signal level is: %i" % signal_level)
-    requests.get(logbook_url, params={'log_type': "INFO", 'machine': machine_name, 'service': service_name, 'message': "mobile network signal level is: "+str(signal_level)})
+    send_to_logbook("INFO", "Mobile network signal level: "+str(signal_level))
 # check for any existing SMS, and purge them if needed
 status = sm.GetSMSStatus()
 remain = status['SIMUsed'] + status['PhoneUsed'] + status['TemplatesUsed']
@@ -134,15 +146,14 @@ def send_SMS():
     message = {'Text': uni_text, 'SMSC': {'Location': 1}, 'Number': msisdn}
     try:
         sm.SendSMS(message)
-        requests.get(logbook_url, params={'log_type': "INFO", 'machine': machine_name, 'service': service_name, 'message': "SMS envoyé à "+str(msisdn)})
+        send_to_logbook("INFO", "SMS envoyé à "+str(msisdn))
         log.info("SMS sent!")
         return("OK")
     except Exception as e:
         print(e.__str__())
         log.error(e)
         log.error("error sending SMS to %s: '%s'" % (msisdn, uni_text))
-        # not! would create an infinite loop!s
-        # requests.get(logbook_url, params={'machine': machine_name, 'service': service_name, 'message': "ERREUR! échec de l'envoi du SMS à "+msisdn})
+        # Don't write an ERROR to logbook! would create an infinite loop!
         return("ERROR")
 
 # =======================================================
@@ -172,17 +183,13 @@ def check_incoming_SMS():
                 gammu.DecodeSMS(x)
                 m = x[0]
                 log.info("new SMS received from %s: %s" % (m['Number'], m['Text']))
-                requests.get(logbook_url, params={'log_type': "INFO", 'machine': machine_name, 'service': service_name, 'message': "SMS received from "+str(m['Number'])})
+                send_to_logbook("INFO", "SMS received from "+str(m['Number']))
                 if (m['Number'] in allowed_msisdn):
                     # TODO: exploiter les SMS en arrivée
-
-                    # msg_data = umsgpack.packb([m['Number'], m['Text']])
-                    # topic = "basecamp.SMS.incoming"
-                    # socket_pub.send("%s %s" % (topic, msg_data))
                     pass
                 else:
                     log.warning("%s is not allowed to send SMS to Basecamp!" % m['Number'])
-                    requests.get(logbook_url, params={'log_type': "WARNING", 'machine': machine_name, 'service': service_name, 'message': str(m['Number'])+" n'est un numéro autorisé en réception!"})
+                    send_to_logbook("WARNING", str(m['Number'])+" not authorized to send SMS to BASECAMP!")
                 # now delete it
                 sm.DeleteSMS(0, m['Location'])
     except Exception as e:
@@ -191,13 +198,14 @@ def check_incoming_SMS():
         log.warning("could not check incoming SMS! :s")
         if last_try_OK is not True:
             consecutive_check_failures = consecutive_check_failures + 1
-            if consecutive_check_failures == 5:
-                requests.get(logbook_url, params={'log_type': "WARNING", 'machine': machine_name, 'service': service_name, 'message': "Impossible de vérifier présence SMS (5 fois de suite)"})
+            if consecutive_check_failures == max_failed_SMS_checks:
+                send_to_logbook("WARNING", "Could'nt check incoming SMS - "+str(max_failed_SMS_checks)+" times in a row!")
                 consecutive_check_failures = 0
         else:
             last_try_OK = False
     t = Timer(10.0, check_incoming_SMS)
     t.start()
+
 
 # =======================================================
 # main loop
