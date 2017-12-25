@@ -358,11 +358,19 @@ def do_status():
         str_mode = "ECO"
     else:
         str_mode = "CONFORT"
+    if suppl_expiration is None:
+        suppl_exp_txt = ""
+    else:
+        suppl_exp_txt = suppl_expiration.slang_time()
+    if except_expiration is None:
+        except_exp_txt = ""
+    else:
+        except_exp_txt = except_expiration.slang_time()
     status = {'base_profile': base_profile, 'suppl_profile': suppl_profile, 'except_profile': except_profile,
               'current_profile': current_profile, 'calendar': calendar, 'main_sensor_calendar': main_sensor_calendar,
               'profile_list': profile_list, 'temp_in': temp_in, 'relay_out': relay_out,
               'th_mode': str_mode, 'temp_eco': temp_eco, 'temp_conf': temp_conf, 'aimed_temp': aimed_temp,
-              'suppl_expiration': suppl_expiration.slang_time(), 'except_expiration': except_expiration.slang_time()}
+              'suppl_expiration': suppl_exp_txt, 'except_expiration': except_exp_txt}
     return(status)
 
 
