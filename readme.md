@@ -200,11 +200,10 @@ Many services are set on many machines. Complex interactions between them are do
   * bonjour: bc-watch.local
   * fixed IP: 192.168.1.54
 
-* `bc-presence` (Debian Jessi on CHIP, ssh chip@bc-presence.local, UP) is the presence module, located near the bc-ui unit, that will:
-  + detect any nearby presence using PIR sensors, and then wake up the bc-ui from screensaver, to let the user see the dashboard slideshow/clock (+ update the presence if required, or set an alarm if _lockout_ state)
-  + monitor the outdoor luminosity to turn on/off the night led lights in the living room
-  + scan regularly via bluetooth to check if the Galaxy A5 is detected nearby, and set the presence variable accordingly (disable _lockout_, greets & report)
-    * bonjour: bc-presence.local
+* `bc-veilleuse` (Debian Jessi on CHIP, ssh chip@bc-veilleuse.local, UP) is the veilleuse module, located near the bc-ui unit, that will:
+  + monitor the outdoor luminosity to turn on/off the night led lights in the living room (_veilleuse_)
+  + scans BT on demand for known devices (*BT_scanner*)
+    * bonjour: bc-veilleuse.local
     * fixed IP: 192.168.1.53
   
 * `bc-power` (Raspbian on RPi1, ssh nio@bc-power.local, UP) is the module located near the house heater and main power metering unit, that will:
