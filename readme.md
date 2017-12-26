@@ -2,6 +2,9 @@
 
 ## Todo
 
+heater:
++ ajouter notification/INFO sur les set_*profile, et ajouter l'option de mettre un profil vide pour set_except_profile & set_suppl_profile, pour effacer/annuler le profil en cours.
+
 _tools:
 - [ ] utiliser un makefile
 pour déployer, pécho les ini, redémarrer les machines, les MAJ, et faire un 
