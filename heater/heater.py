@@ -4,10 +4,9 @@
 """
 heater service
 
-depends on: logbook, influxdb
-
-(python2 compatible)
-<insert open source licence here>
+- depends on: logbook, influxdb
+- for python3
+- published under GNU GENERAL PUBLIC LICENSE (see LICENCE file)
 """
 
 import logging
@@ -393,12 +392,20 @@ def do_set_suppl_profile():
     global suppl_profile
     global suppl_expiration
     global timezone
+    if request.query.profile == "":
+        notify("removing suppl_profile \'{}\' that would have expired {}.".format(suppl_profile, suppl_expiration.slang_time()))
+        suppl_profile = ""
+        suppl_expiration = None
+        update_ini()
+        check_applicable_profile()
+        return("OK")
     if request.query.profile in profile_list:
         suppl_profile = request.query.profile
         try:
             suppl_expiration = maya.MayaDT.from_rfc2822(request.query.expiration+' '+timezone)
         except:
             return("ERROR: couldn't parse the expiration field. example: '2017-12-23 08:23:45'")
+        notify("added suppl_profile \'{}\' that will expire {}.".format(suppl_profile, suppl_expiration.slang_time()))
         update_ini()
         check_applicable_profile()
         return("OK")
@@ -412,12 +419,20 @@ def do_set_except_profile():
     global except_profile
     global except_expiration
     global timezone
+    if request.query.profile == "":
+        notify("removing except_profile \'{}\' that would have expired {}.".format(except_profile, except_expiration.slang_time()))
+        except_profile = ""
+        except_expiration = None
+        update_ini()
+        check_applicable_profile()
+        return("OK")
     if request.query.profile in profile_list:
         except_profile = request.query.profile
         try:
             except_expiration = maya.MayaDT.from_rfc2822(request.query.expiration+' '+timezone)
         except:
             return("ERROR: couldn't parse the expiration field. example: '2017-12-23 08:23:45'")
+        notify("added except_profile \'{}\' that will expire {}.".format(except_profile, except_expiration.slang_time()))
         update_ini()
         check_applicable_profile()
         return("OK")
