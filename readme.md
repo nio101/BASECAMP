@@ -47,19 +47,6 @@ tous:
 
 ### Services/applications/machines Monitoring
 
-Basic page with iframes to:
-+ watchdog_master status
-+ logbook output
-+ supervisor http UIs of each machines
-=> allows to easily start/stop programs and see program logs
-
-Inspiration: Material design de Google?
-https://material.io/icons/
-
-Frameworks HTML5
-1er choix: https://material.io/components/web/
-2ème choix: http://materializecss.com/about.html
-
 ## Services
 
 ### [rules for every service] **[DONE]**
