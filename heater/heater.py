@@ -171,7 +171,7 @@ def update_ini():
     return
 
 
-def determine_sensor():
+def determine_sensors():
     global main_sensor
     global secondary_sensor
     global main_sensor_calendar
@@ -184,9 +184,9 @@ def determine_sensor():
             res = True
             break
     if res is True:
-        return main_sensor
+        return (main_sensor, secondary_sensor)
     else:
-        return secondary_sensor
+        return (secondary_sensor, main_sensor)
 
 
 def is_calendar_on_eco(calendar):
@@ -237,6 +237,7 @@ def timer_export_influxdb():
 def check_temp_update():
     global th_mode
     global temp_in
+    global sec_temp_in
     global relay_out
     global log
     global aimed_temp
@@ -248,7 +249,7 @@ def check_temp_update():
     t = Timer(30, check_temp_update)
     t.start()
 
-    sensor_name = determine_sensor()
+    (sensor_name, sec_sensor_name) = determine_sensors()
     try:
         payload = {'db': "basecamp", 'q': "SELECT LAST(\"Tmp\") FROM \"muta\" WHERE unit='"+sensor_name+"'"}
         r = requests.get(influxdb_query_url, params=payload)
@@ -263,6 +264,21 @@ def check_temp_update():
         timestamp = res[0]
         temp_in = float(res[1])
         log.info("input temperature (from sensor '%s') updated to: %.2f°C @ %s" % (sensor_name, temp_in, str(timestamp)))
+
+    try:
+        payload = {'db': "basecamp", 'q': "SELECT LAST(\"Tmp\") FROM \"muta\" WHERE unit='"+sec_sensor_name+"'"}
+        r = requests.get(influxdb_query_url, params=payload)
+    except (requests.exceptions.RequestException, requests.exceptions.ConnectionError) as e:
+        log.error(e.__str__())
+        send_to_logbook("ERROR", "Can't reach influxdb!")
+    except:
+        log.error("Unexpected error:"+sys.exc_info()[0])
+        send_to_logbook("ERROR", "Can't reach influxdb!")
+    else:
+        res = r.json()["results"][0]["series"][0]["values"][0]
+        timestamp = res[0]
+        sec_temp_in = float(res[1])
+        log.info("input temperature (from sensor '%s') updated to: %.2f°C @ %s" % (sec_sensor_name, sec_temp_in, str(timestamp)))
 
         # ------------------------------------------------------------------------------------------
         # heating command update loop
@@ -287,10 +303,17 @@ def check_temp_update():
 
         log.info("aimed_temp=%.2f, relay=%i" % (aimed_temp, relay_out))
 
+        should_stop = float(temp_in) >= (aimed_temp+float(delta_temp_plus)) and (relay_out == 1)
+        should_stop_bis = float(sec_temp_in) >= max_temp and (relay_out == 1)
+        should_start = float(temp_in) <= (aimed_temp-float(delta_temp_minus)) and (relay_out == 0)
+        should_start_bis = float(sec_temp_in) < max_temp
         # hystheresis
-        if (float(temp_in) >= (aimed_temp+float(delta_temp_plus)) and (relay_out == 1)):
+        if should_stop or should_stop_bis:
             # stop the heater
-            log.info("therm: %.2f reached (%.2f max, %.2f aimed), stopping the heater" % (float(temp_in), (aimed_temp+float(delta_temp_plus)), float(aimed_temp)))
+            if should_stop:
+                log.info("Main sensor temp: %.2f. Goal reached (%.2f max, %.2f aimed), stopping the heater" % (float(temp_in), (aimed_temp+float(delta_temp_plus)), float(aimed_temp)))
+            if should_stop_bis:
+                log.info("Secondary sensor temp: %.2f. Maximum reached (%.2f max), stopping the heater" % (float(sec_temp_in), sec_temp_in))
             # switch using GPIO + check with probe
             log.info("resetting the heater relay")
             GPIO.output(reset, 1)
@@ -310,9 +333,9 @@ def check_temp_update():
             # log.debug("sending (ORDERS): ozw_operator_heater_command, {'relais_chaudiere':'False'}")
             # msg = msgpack.packb(["ozw_operator_heater_command","{'relais_chaudiere':'False'}"])
             # socket_orders.send(msg)
-        elif ((float(temp_in) <= (aimed_temp-float(delta_temp_minus))) and (relay_out == 0)):
+        elif should_start and should_start_bis:
             # start the heater
-            log.info("therm: %.2f reached (%.2f min, %.2f aimed), starting the heater" % (float(temp_in), (float(aimed_temp)-float(delta_temp_minus)), float(aimed_temp)))
+            log.info("Main sensor temp: %.2f. Low limit reached (%.2f min, %.2f aimed), starting the heater" % (float(temp_in), (float(aimed_temp)-float(delta_temp_minus)), float(aimed_temp)))
             # switch using GPIO + check with probe
             log.info("setting the heater relay")
             GPIO.output(set, 1)
@@ -332,6 +355,10 @@ def check_temp_update():
             # log.debug("sending (ORDERS): ozw_operator_heater_command, {'relais_chaudiere':'True'}")
             # msg = msgpack.packb(["ozw_operator_heater_command","{'relais_chaudiere':'True'}"])
             # socket_orders.send(msg)
+        elif should_start and not should_start_bis:
+            # can't start because max temp reached on secondary sensor
+            log.info("Should start because main sensor temp: %.2f. Low limit is reached (%.2f min, %.2f aimed)." % (float(temp_in), (float(aimed_temp)-float(delta_temp_minus)), float(aimed_temp)))
+            log.info("But we can't because the secondary sensor temp: %.2f is too high (%.2f max)." % (float(sec_temp_in), sec_temp_in))
         if need_influxdb_update is True:
             export_to_influxdb()
         # ------------------------------------------------------------------------------------------
@@ -367,7 +394,7 @@ def do_status():
         except_exp_txt = except_expiration.slang_time()
     status = {'base_profile': base_profile, 'suppl_profile': suppl_profile, 'except_profile': except_profile,
               'current_profile': current_profile, 'calendar': calendar, 'main_sensor_calendar': main_sensor_calendar,
-              'profile_list': profile_list, 'temp_in': temp_in, 'relay_out': relay_out,
+              'profile_list': profile_list, 'temp_in': temp_in, 'sec_temp_in': sec_temp_in, 'relay_out': relay_out,
               'th_mode': str_mode, 'temp_eco': temp_eco, 'temp_conf': temp_conf, 'aimed_temp': aimed_temp,
               'suppl_expiration': suppl_exp_txt, 'except_expiration': except_exp_txt}
     return(status)
@@ -472,7 +499,9 @@ else:
     except_expiration = None
 main_sensor = th_config.get("heating", "main_sensor")
 secondary_sensor = th_config.get("heating", "secondary_sensor")
+max_temp = th_config.getfloat("heating", "max_temp")
 timezone = th_config.get("main", "timezone")
+
 # also: getfloat, getint, getboolean
 
 # log
@@ -515,6 +544,7 @@ influx_json_body = [
 # default values for thermostat - will be overwritten at the next update
 relay_out = None
 temp_in = None
+sec_temp_in = None
 temp_eco = 12
 temp_conf = 12
 delta_temp = 0.5

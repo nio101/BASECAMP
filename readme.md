@@ -3,7 +3,7 @@
 ## Todo
 
 heater:
-+ ajouter notification/INFO sur les set_*profile, et ajouter l'option de mettre un profil vide pour set_except_profile & set_suppl_profile, pour effacer/annuler le profil en cours.
+- mettre une t° max par profil qui ne doit pas être dépassée qque soit le capteur + récupérer les 2 capteurs à chaque fois pour vérifier.
 
 _tools:
 - [ ] utiliser un makefile
