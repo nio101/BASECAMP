@@ -6,7 +6,7 @@ veilleuse service
 
 dependencies: interphone, logbook
 
-(python2.7/python3 compatible)
+(python3)
 """
 
 import CHIP_IO.GPIO as GPIO

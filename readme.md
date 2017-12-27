@@ -2,9 +2,6 @@
 
 ## Todo
 
-heater:
-- mettre une t° max par profil qui ne doit pas être dépassée qque soit le capteur + récupérer les 2 capteurs à chaque fois pour vérifier.
-
 _tools:
 - [ ] utiliser un makefile
 pour déployer, pécho les ini, redémarrer les machines, les MAJ, et faire un 

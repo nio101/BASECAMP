@@ -20,13 +20,16 @@ import sys
 import socket
 from bottle import response
 from json import dumps
-import subprocess
+from subprocess import check_output
 
 
 # =======================================================
 # helpers
 
 def send_to_logbook(log_type, msg):
+    """
+    write to remote logbook (pushover may be sent for "INFO", SMS for "ERROR" or "ALARM")
+    """
     try:
         requests.get(logbook_url, params={'log_type': log_type, 'machine': machine_name, 'service': service_name, 'message': msg},
                      timeout=logbook_timeout)
@@ -35,25 +38,38 @@ def send_to_logbook(log_type, msg):
         log.error("*** ERROR reaching logbook on "+str(logbook_url)+" ***")
 
 
-def notify(msg):
+def notify(type, msg):
     """
-    proper notification tryout
+    log & write to logbook, depending on the notification level
     """
-    log.info(msg)
-    send_to_logbook("INFO", msg)
+    if type == "DEBUG":
+        log.debug(msg)
+    elif type == "INFO":
+        log.info(msg)
+    elif type == "WARNING":
+        log.warning(msg)
+        send_to_logbook(type, msg)
+    elif type == "ERROR":
+        log.error(msg)
+        send_to_logbook(type, msg)
 
 
 def scan_alias(alias):
     """
     BT scan on given address
+
+    2 alternatives:
+        sudo l2ping XX:XX:XX:XX:XX:XX
+        sudo hcitool cc XX:XX:XX:XX:XX:XX && sudo hcitool rssi XX:XX:XX:XX:XX:XX
+    the first one seems to be a bit faster
     """
-    # do a hcitool connect+rssi or a l2ping?
-    # do the quickest! rssi is optional, presence is vital
-    p = subprocess.Popen(["scp -r "], shell=True)
-    sts = p.wait()
-    print(sts)
-    result = "FOUND"
-    rssi = -75
+    try:
+        res = check_output(["sudo hcitool cc "+BT_aliases[alias]+" && sudo hcitool rssi "+BT_aliases[alias]], shell=True)
+        result = res.splitlines()[-1].decode('ascii')
+        rssi = -75
+    except:
+        result = "NOT FOUND"
+        rssi = -99
     return(result, rssi)
 
 

@@ -1,7 +1,7 @@
 # Evolutions BASECAMP
 
 + heater:
-    + ajouter *max_temp* dans heater.ini + liste de capteurs pour check sur les capteurs & stopper le chauffage tant que temp(un des capteurs) >= max_temp. Permet d'adresser le problème de la chambre qui ne chauffe pas alors qu'il fait 22°C au RDC si asservissement sur la chambre...
+    + une fois que les modes seront implémentés, le mode ASLEEP force l'usage du secondary sensor comme référence, même si la config dit autrement.
 
 + Veilleuse: exporter variable veilleuse vers mongoDB en fonction de luminosité extérieure.
     + récupérer éphéméride (librairie python?) & calculer heure de lever/coucher
@@ -35,8 +35,7 @@ fonte:Roboto, ou bien utiliser fontes:
     + faire en sorte que scheduler puisse lire mon agenda et me rappeler les trucs pour lesquels j'ai mis un TAG spécifique genre "BASECAMP-1d", et du coup, il me rappelle le RV la veille au soir, à mon retour (ou par SMS, ou les deux). Ou bien "BASECAMP-3h" et il me rappelle le RV 3h avant... :)
         + mettre le calendrier des poubelles! :)
     + pour les annonces d'heure, ajouter des variantes marrantes, et aussi un commentaire... "et tout va bien ici..." ou bien "On a quelques soucis, ici, quand tu auras un moment... merci!". Scanner la présence BT par exemple pour varier en ajoutant les Alias (Nico, Natacha)...
-    + conditionner les annonces vocales d'heure au mode cocoon exclusivement.
-    + 
+    + conditionner les annonces vocales d'heure en mode cocoon exclusivement.
 
 + Music:
     + commande du/des ZipMini (de deezer devices en général) via l'API de Deezer
@@ -83,12 +82,7 @@ fonte:Roboto, ou bien utiliser fontes:
     + si LOCKOUT && retour précisé => force_eco jusqu'au retour (-1h), sauf si trop court.
     + 
 
-+ BT_scan
-    + depuis veilleuse (CHIP, ok pour bluez & scan BT)
-    + mettre une API simple pour scanner / demander qui est là, et obtenir un RSSI et des prénoms en retour
-    + /alive, /scan_all, /scan_alias?alias=nicolas
-
-+ PIR_scan
++ PIR_scanner
     + depuis bc-ui, lit la sortie console du module TrinketM0 (mettre aussi son script python dans _circuitpython_), et MAJ la température du module dans InfluxDB (5mn? - utilisé par Nightwatch pour éventuel check problème chauffage), et surtout détecte et pousse la présence de passage pour chaque capteur PIR dans InfluxDB (PIR_entry, PIR_UI, PIR_indoor) + info poussée vers Operator pour éventuelle prise en compte.
 
 + passer tous les modules en python3, sauf ceux qui ne peuvent pas. (implique d'installer le dernier python3 & les requirements)
