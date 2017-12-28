@@ -1,82 +1,378 @@
 <!DOCTYPE html>
-<html class="mdc-typography">
+<html>
+
   <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Greeting App</title>
-    <link
-      rel="stylesheet"
-      href="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css">
+    <title>Material Components for the web</title>
+    
+    <link rel="stylesheet"
+          href="node_modules/material-components-web/dist/material-components-web.css">
+
+    <link type="text/css" rel="stylesheet" href="./blob.css">
+
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto+Mono">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500">
+
     <style>
-        :root {
-            --mdc-theme-primary: #04B431;
-        }
-        #greeting-form > button {
-            margin-top: 8px;
-        }
+      .demo-body {
+        padding: 24px;
+        margin: 0;
+        box-sizing: border-box;
+      }
+      .demo-content > button {
+        margin-bottom: 6px;
+      }
+      .mdc-theme--dark {
+        background-color: #303030;
+      }
+
+      section.demo-content {
+        padding: 24px;
+      }
+
+      .catalog-dialog-demo {
+        position: relative;
+        width: 320px;
+        z-index: auto;
+      }
+
+      .dialog-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .mdc-theme--dark, .section-dark-theme {
+        background: #262626;
+        color: white;
+      }
     </style>
+
+<style>
+      .demo-surface {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 200px;
+        height: 100px;
+        padding: 1rem;
+        cursor: pointer;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+
+      .mdc-ripple-surface[data-mdc-ripple-is-unbounded] {
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        border-radius: 50%;
+      }
+
+      .mdc-ripple-surface[data-mdc-ripple-is-unbounded][data-demo-no-js]::before,
+      .mdc-ripple-surface[data-mdc-ripple-is-unbounded][data-demo-no-js]::after {
+        height: 100%;
+        left: 0;
+        top: 0;
+        width: 100%;
+      }
+
+      button.demo-surface {
+        display: inline-block; /* Safari does not center button text otherwise :( */
+        background: none;
+        border: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+      }
+
+      body {
+        font-family: sans-serif;
+      }
+
+      #unsupported-msg {
+        padding: 1rem;
+        border: 1px solid red;
+        color: red;
+        border-radius: 4px;
+        display: none;
+        position: absolute;
+        z-index: 10;
+      }
+
+      .unsupported #unsupported-msg {
+        display: block;
+      }
+
+      .unsupported main {
+        opacity: .2;
+        pointer-events: none;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+
+      @media (max-width: 565px) {
+        .example_ripple {
+          flex-direction: column;
+          width: 100%;
+        }
+      }
+
+      .example_ripple {
+        margin: 24px;
+        padding: 24px;
+        align-items: center;
+        display: flex;
+        margin-left: 10px;
+      }
+
+      .example_ripple > div {
+        margin: 48px 0;
+        width: 400px;
+      }
+
+      .example_ripple h2 {
+        font-size: 1.2em;
+        margin-bottom: 0.8em;
+      }
+    </style>
+
   </head>
-  <body>
-    <main>
-      <h1 class="mdc-typography--display1">Tell us about yourself!</h1>
 
-      <form action="#" id="greeting-form">
-        <div>
-          <div class="mdc-form-field">
-            <div class="mdc-text-field" data-mdc-auto-init="MDCTextField">
-              <input id="firstname" type="text" class="mdc-text-field__input">
-              <label for="firstname" class="mdc-text-field__label">
-                First Name
-              </label>
-              <div class="mdc-text-field__bottom-line"></div>
+  <body class="mdc-typography mdc-theme--dark">
+
+    <div class="demo-grid mdc-layout-grid">
+            <div class="mdc-layout-grid__inner">
+                <div class="mdc-card mdc-layout-grid__cell--span-3 mdc-elevation--z24">
+                    <section class="mdc-card__primary">
+                      <h1 class="mdc-card__title mdc-card__title--large">MODE</h1>
+                      <h2 class="mdc-card__subtitle">Subtitle here</h2>
+                    </section>
+                    <section class="mdc-card__actions">
+                      <button class="mdc-button mdc-button--compact mdc-card__action mdc-ripple-surface">Action 1</button>
+                      <button class="mdc-button mdc-button--compact mdc-card__action mdc-ripple-surface">Action 2</button>
+                    </section>
+                </div>
+                <div class="mdc-card mdc-layout-grid__cell--span-3 mdc-elevation--z24">
+                    <section class="mdc-card__primary">
+                      <h1 class="mdc-card__title mdc-card__title--large">CHAUFFAGE</h1>
+                      <h2 class="mdc-card__subtitle">Subtitle here</h2>
+                    </section>
+                    <section class="mdc-card__actions">
+                      <button class="mdc-button mdc-button--compact mdc-card__action">Action 1</button>
+                      <button class="mdc-button mdc-button--compact mdc-card__action">Action 2</button>
+                    </section>
+                </div>
+                <div class="mdc-card mdc-layout-grid__cell--span-3 mdc-elevation--z24">
+                    <section class="mdc-card__primary">
+                      <h1 class="mdc-card__title mdc-card__title--large">EAU</h1>
+                      <h2 class="mdc-card__subtitle">Subtitle here</h2>
+                    </section>
+                    <section class="mdc-card__actions">
+                      <button class="mdc-button mdc-button--compact mdc-card__action">Action 1</button>
+                      <button class="mdc-button mdc-button--compact mdc-card__action">Action 2</button>
+                    </section>
+                </div>
+                <div class="mdc-card mdc-layout-grid__cell--span-3 mdc-elevation--z24">
+                    <section class="mdc-card__primary">
+                      <h1 class="mdc-card__title mdc-card__title--large">ELECTRICITE</h1>
+                      <h2 class="mdc-card__subtitle">Subtitle here</h2>
+                    </section>
+                    <section class="mdc-card__actions">
+                      <button class="mdc-button mdc-button--compact mdc-card__action">Action 1</button>
+                      <button class="mdc-button mdc-button--compact mdc-card__action">Action 2</button>
+                    </section>
+                </div>
             </div>
-          </div>
+    </div>
 
-          <div class="mdc-form-field">
-            <div class="mdc-text-field" data-mdc-auto-init="MDCTextField">
-              <input id="lastname" type="text" class="mdc-text-field__input">
-              <label for="lastname" class="mdc-text-field__label">
-                Last Name
-              </label>
-              <div class="mdc-text-field__bottom-line"></div>
+    <div class="demo-grid mdc-layout-grid">
+            <div class="mdc-layout-grid__inner">
+                <div class="mdc-card mdc-layout-grid__cell--span-12 mdc-elevation--z24">
+                    
+                    <section id="dynamic-demo-toolbar">
+                      <nav id="dynamic-tab-bar" class="mdc-tab-bar mdc-tab-bar--indicator-accent" role="tablist">
+                        <a role="tab" aria-controls="panel-1"
+                           class="mdc-tab mdc-tab--active" href="#panel-1">Item One</a>
+                        <a role="tab" aria-controls="panel-2"
+                           class="mdc-tab" href="#panel-2">Item Two</a>
+                        <a role="tab" aria-controls="panel-3"
+                           class="mdc-tab" href="#panel-3">Item Three</a>
+                        <span class="mdc-tab-bar__indicator"></span>
+                      </nav>
+                    </section>
+                    <section>
+                      <div class="panels">
+                        <p class="panel active" id="panel-1" role="tabpanel" aria-hidden="false">Item One</p>
+                        <p class="panel" id="panel-2" role="tabpanel" aria-hidden="true">Item Two</p>
+                        <p class="panel" id="panel-3" role="tabpanel" aria-hidden="true">Item Three</p>
+                      </div>
+                      <div class="dots">
+                        <a class="dot active" data-trigger="panel-1" href="#panel-1"></a>
+                        <a class="dot" data-trigger="panel-2" href="#panel-2"></a>
+                        <a class="dot" data-trigger="panel-3" href="#panel-3"></a>
+                      </div>
+                    </section>
+
+                    <section class="mdc-card__primary">
+                    <button class="mdc-fab material-icons mdc-ripple-surface" aria-label="Favorite" style="--mdc-ripple-fg-size:33.6px; --mdc-ripple-fg-scale:2.654641651574206; --mdc-ripple-fg-translate-start:10.7px, -11.8px; --mdc-ripple-fg-translate-end:11.2px, 11.2px;">
+                      <span class="mdc-fab__icon">
+                        favorite_border
+                      </span>
+                    </button>
+                    </section>
+
+                    <section class="mdc-card__primary">
+                        <h2>Switch on Dark Theme</h2>
+                        <div class="demo-switch-wrapper">
+                          <div class="mdc-switch">
+                            <input id="basic-switch--dark" class="mdc-switch__native-control" type="checkbox">
+                            <div class="mdc-switch__background">
+                              <div class="mdc-switch__knob"></div>
+                            </div>
+                          </div>
+                          <label for="basic-switch--dark" class="mdc-switch-label">off/on</label>
+                        </div>
+                      </section>
+                    <section class="example">
+                        <div class="dialog-container">
+                          <aside class="catalog-dialog-demo mdc-dialog mdc-dialog--open">
+                            <div class="mdc-dialog__surface mdc-elevation--z24">
+                              <header class="mdc-dialog__header">
+                                <h2 id="mdc-dialog-default-label" class="mdc-dialog__header__title">
+                                  Are you happy?
+                                </h2>
+                              </header>
+                              <section id="mdc-dialog-default-description" class="mdc-dialog__body">
+                                Please check the left and right side of this element for fun.
+                              </section>
+                              <footer class="mdc-dialog__footer">
+                                <button type="button" class="mdc-button mdc-dialog__footer__button mdc-dialog__footer__button--cancel">Cancel</button>
+                                <button type="button" class="mdc-button mdc-dialog__footer__button mdc-dialog__footer__button--accept">Continue</button>
+                              </footer>
+                            </div>
+                          </aside>
+                        </div>
+                      </section>
+                </div>
             </div>
-          </div>
-        </div>
+    </div>
 
-        <button type="submit"
-                class="mdc-button
-                       mdc-button--raised
-                       mdc-ripple-surface"
-                data-mdc-auto-init="MDCRipple">
-          Print Greeting
-        </button>
-      </form>
+    <div class="demo-grid mdc-layout-grid">
+            <div class="mdc-layout-grid__inner">
+                <div class="mdc-card mdc-layout-grid__cell--span-3 mdc-elevation--z24">
+                    <section class="mdc-card__primary">
+                      <h1 class="mdc-card__title mdc-card__title--large">RADIO</h1>
+                      <h2 class="mdc-card__subtitle">Subtitle here</h2>
+                    </section>
+                    <section class="mdc-card__actions">
+                      <button class="mdc-button mdc-button--compact mdc-card__action">Action 1</button>
+                      <button class="mdc-button mdc-button--compact mdc-card__action">Action 2</button>
+                    </section>
+                </div>
+                <div class="mdc-card mdc-layout-grid__cell--span-3 mdc-elevation--z24">
+                    <section class="mdc-card__primary">
+                      <h1 class="mdc-card__title mdc-card__title--large">LOGBOOK</h1>
+                      <h2 class="mdc-card__subtitle">Subtitle here</h2>
+                    </section>
+                    <section class="mdc-card__actions">
+                      <button class="mdc-button mdc-button--compact mdc-card__action">Action 1</button>
+                      <button class="mdc-button mdc-button--compact mdc-card__action">Action 2</button>
+                    </section>
+                </div>
+                <div class="mdc-card mdc-layout-grid__cell--span-3 mdc-elevation--z24">
+                    <section class="mdc-card__primary">
+                      <h1 class="mdc-card__title mdc-card__title--large">WATCHDOG</h1>
+                      <h2 class="mdc-card__subtitle">Subtitle here</h2>
+                    </section>
+                    <section class="mdc-card__actions">
+                      <button class="mdc-button mdc-button--compact mdc-card__action">Action 1</button>
+                      <button class="mdc-button mdc-button--compact mdc-card__action">Action 2</button>
+                    </section>
+                </div>
+                <div class="mdc-card mdc-layout-grid__cell--span-3 mdc-elevation--z24">
+                    <section class="mdc-card__primary">
+                      <h1 class="mdc-card__title mdc-card__title--large">VEILLEUSE</h1>
+                      <h2 class="mdc-card__subtitle">Subtitle here</h2>
+                    </section>
+                    <section class="mdc-card__actions">
+                      <button class="mdc-button mdc-button--compact mdc-card__action">Action 1</button>
+                      <button class="mdc-button mdc-button--compact mdc-card__action">Action 2</button>
+                    </section>
+                </div>
+            </div>
+    </div>
 
-      <!-- The p element below is where we'll eventually output our greeting -->
-      <p class="mdc-typography--headline" id="greeting"></p>
-</main>
-    <script src="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js"></script>
-    <script>window.mdc.autoInit();</script>
+    <script src="node_modules/material-components-web/dist/material-components-web.js"></script>
+    <script>mdc.autoInit()</script>
+
     <script>
-      document.getElementById('greeting-form').addEventListener('submit', function(evt) {
-        evt.preventDefault();
-        var firstname = evt.target.elements.firstname.value;
-        var lastname = evt.target.elements.lastname.value;
-        var greeting = 'Hello';
-        if (firstname || lastname) {
-          greeting += ', ';
-          if (firstname && lastname) {
-            greeting += firstname + ' ' + lastname;
-          } else if (lastname) {
-            greeting += 'Mx. ' + lastname;
-          } else {
-            greeting += firstname;
+      (function(global) {
+        if (!mdc.ripple.util.supportsCssVariables(global)) {
+          document.documentElement.classList.add('unsupported');
+        }
+
+        [].forEach.call(document.querySelectorAll('.mdc-ripple-surface:not([data-demo-no-js])'), function(surface) {
+          mdc.ripple.MDCRipple.attachTo(surface);
+        });
+      })(this);
+    </script>
+
+    <script>
+        var dynamicTabBar = window.dynamicTabBar = new mdc.tabs.MDCTabBar(document.querySelector('#dynamic-tab-bar'));
+        var dots = document.querySelector('.dots');
+        var panels = document.querySelector('.panels');
+
+        dynamicTabBar.tabs.forEach(function(tab) {
+          tab.preventDefaultOnClick = true;
+        });
+
+        function updateDot(index) {
+          var activeDot = dots.querySelector('.dot.active');
+          if (activeDot) {
+            activeDot.classList.remove('active');
+          }
+          var newActiveDot = dots.querySelector('.dot:nth-child(' + (index + 1) + ')');
+          if (newActiveDot) {
+            newActiveDot.classList.add('active');
           }
         }
-        greeting += '!';
 
-        document.getElementById('greeting').textContent = greeting;
-      });
+        function updatePanel(index) {
+          var activePanel = panels.querySelector('.panel.active');
+          if (activePanel) {
+            activePanel.classList.remove('active');
+          }
+          var newActivePanel = panels.querySelector('.panel:nth-child(' + (index + 1) + ')');
+          if (newActivePanel) {
+            newActivePanel.classList.add('active');
+          }
+        }
+
+        dynamicTabBar.listen('MDCTabBar:change', function ({detail: tabs}) {
+          var nthChildIndex = tabs.activeTabIndex;
+
+          updatePanel(nthChildIndex);
+          updateDot(nthChildIndex);
+        });
+
+        dots.addEventListener('click', function (evt) {
+          if (!evt.target.classList.contains('dot')) {
+            return;
+          }
+
+          evt.preventDefault();
+
+          var dotIndex = [].slice.call(dots.querySelectorAll('.dot')).indexOf(evt.target);
+
+          if (dotIndex >= 0) {
+            dynamicTabBar.activeTabIndex = dotIndex;
+          }
+
+          updatePanel(dotIndex);
+          updateDot(dotIndex);
+        })
     </script>
+
   </body>
+
 </html>
