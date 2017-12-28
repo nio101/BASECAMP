@@ -1,9 +1,14 @@
 # Evolutions BASECAMP
 
++ compléter le module BASECAMP_commons
+    * tester bc.influxDB
+
 + heater:
     + une fois que les modes seront implémentés, le mode ASLEEP force l'usage du secondary sensor comme référence, même si la config dit autrement.
 
-+ Veilleuse: exporter variable veilleuse vers mongoDB en fonction de luminosité extérieure.
++ Veilleuse:
+    + transformer en serveur HTTP & positionner une variable ON/OFF/AUTO avec /alive, /status, /set?mode=ON/OFF/AUTO
+    + exporter variable veilleuse vers mongoDB en fonction de luminosité extérieure.
     + récupérer éphéméride (librairie python?) & calculer heure de lever/coucher
     + si noir avant coucher => WARNING
     + si lumière avant lever => WARNING
@@ -61,7 +66,12 @@ fonte:Roboto, ou bien utiliser fontes:
         + Si pas de ping depuis Core depuis un certain temps => reboot
 
 + Operator
+    * current mode: aller le chercher dans influxDB, avec un mode par défaut si rien en base.
     + reçoit les infos de MAJ PIR depuis PIR_scan
+        * détection présence => ping présence dans influxdb
+        * reprendre schémas de transition pour déterminer TODO qd réception PIR
+        * si PIR entrée, scan BT. Si ok => greetings & passage en mode Cocoon. Sinon, alarm.
+        * si PIR écran, sortir de la mise en veille (xset dpms force on/off, xset -q)
     + gère le lightpad
       + possibilité de pulser gentiment la couleur?
         + lockout => rouge/orange
