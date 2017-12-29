@@ -47,13 +47,109 @@ def download_file(url):
                 f.write(chunk)
     return local_filename
 
+
+def update_ini():
+    """
+    to save the value of interphone_enabled & default_volume
+    """
+    global th_config
+    th_config.set("main", "default_volume", str(default_volume))
+    if announces_enabled:
+        th_config.set("main", "announces_enabled", "true")
+    else:
+        th_config.set("main", "announces_enabled", "false")
+
+    with open(service_name+".ini", 'w') as configfile:
+        th_config.write(configfile)
+    return
+
+
+def radio_speech(announce, volume):
+    # request TTS wav file
+    r = requests.get(tts_url, params={'text': announce}, stream=True)
+    if r.status_code == 200:
+        wav_url = r.text
+        # download wav file
+        local_wav = download_file(wav_url)
+        # call(["sox", local_wav, "announce_plus_contrast.wav", "contrast"])
+        # play wav file
+        # volume = 70
+        # call(["amixer", "-D", "pulse", "sset", "Master", str(volume)+"%"])
+        """
+        if (now.hour >= 7) and (now.hour <= 23):
+            vol1 = "50%"
+        else:
+            vol1 = "35%"
+        """
+        # post-process the synthesis
+        # call(["sox", local_wav, "announce_plus_contrast.wav", "contrast"])
+        # apply multiple high pass filters on voice
+        call(["sox", local_wav, "tmp.wav", "contrast", "highpass", "1000", "highpass", "1000", "gain", "15"])
+        # concatenate with in and out fx
+        call(["sox", "fx/beep_in_22k.wav", "tmp.wav", "fx/beep_out_22k.wav", "tmp2.wav", "gain", "3"])
+        # mix with static noise and trim
+        res1 = check_output(["soxi", "-D", "tmp2.wav"])
+        print(res1)
+        print("'"+str(float(res1))+"'")
+        call(["sox", "-m", "tmp2.wav", "fx/static_22k.wav", "res.wav", "trim", "0", str(float(res1))])
+        # now, play it
+        print("'"+volume+"'")
+        call(["amixer", "-D", "pulse", "sset", "Master", volume])
+        # os.system("aplay codeccall.wav")
+        # os.system("aplay codecopen.wav")
+        os.system("aplay res.wav")
+        # os.system("aplay codecover.wav")
+        # remove the file
+        os.remove(local_wav)
+        return True
+    else:
+        send_to_logbook("ERROR", "ERROR getting the TTS file from "+tts_url)
+        return False
+
 # =======================================================
 # HTTP requests
-
 
 @get('/alive')
 def do_alive():
     return "OK"
+
+
+@get('/status')
+def do_status():
+    return {"default_volume": default_volume, "announces_enabled": announces_enabled}
+
+
+@get('/set_default_volume')
+def do_set_default_volume():
+    global default_volume
+    if request.query.default_volume == "":
+        return("ERROR: must provide a default_volume integer value!")
+    try:
+        default_volume = int(request.query.default_volume)
+    except:
+        return("erreur trying to convert default_volume value to int!?!")
+    update_ini()
+    if announces_enabled:
+        radio_speech("Okay! Je règle mon volume à {}%...".format(default_volume), str(default_volume)+"%")
+    return("OK, default_volume has been set to {}%.".format(default_volume))
+
+
+@get('/enable_annouces')
+def do_enable_annouces():
+    global announces_enabled
+    announces_enabled = True
+    radio_speech("Cool! Contente d'être de retour sur les ondes!", str(default_volume)+"%")
+    update_ini()
+    return("OK, announces_enabled has been set to {}.".format(announces_enabled))
+
+
+@get('/disable_annouces')
+def do_disable_annouces():
+    global announces_enabled
+    announces_enabled = False
+    radio_speech("Okay! Je vais me taire à partir de maintenant, bye...", str(default_volume)+"%")
+    update_ini()
+    return("OK, announces_enabled has been set to {}.".format(announces_enabled))
 
 
 @get('/lock')
@@ -93,14 +189,19 @@ def do_release():
 
 
 @get('/announce')
-def do_set_profile():
+def do_announce():
+    """
+    brings up a vocal announcement using speech synthesis and a radio fx
+    if announces_enabled is False, then the announce will only work if a
+    lock has been used (by snowboy, for speech reco/synth dialog)
+    """
     global key
     service = request.query.service
     announce = request.query.announce
     m_key = request.query.key
     volume = request.query.volume
     if volume == "":
-        volume = default_volume
+        volume = str(default_volume)+"%"
 
     log.info("%s (key=%s): %s (%s)" % (service, m_key, announce, volume))
 
@@ -109,47 +210,12 @@ def do_set_profile():
         key = ""
     if (m_key != key):
         return("ERROR: key is missing, or invalid/expired")
-
-    # request TTS wav file
-    r = requests.get(tts_url, params={'text': announce}, stream=True)
-    if r.status_code == 200:
-        wav_url = r.text
-        # download wav file
-        local_wav = download_file(wav_url)
-        # call(["sox", local_wav, "announce_plus_contrast.wav", "contrast"])
-        # play wav file
-        # volume = 70
-        # call(["amixer", "-D", "pulse", "sset", "Master", str(volume)+"%"])
-        """
-        if (now.hour >= 7) and (now.hour <= 23):
-            vol1 = "50%"
-        else:
-            vol1 = "35%"
-        """
-        # post-process the synthesis
-        # call(["sox", local_wav, "announce_plus_contrast.wav", "contrast"])
-        # apply multiple high pass filters on voice
-        call(["sox", local_wav, "tmp.wav", "contrast", "highpass", "1000", "highpass", "1000", "gain", "15"])
-        # concatenate with in and out fx
-        call(["sox", "fx/beep_in_22k.wav", "tmp.wav", "fx/beep_out_22k.wav", "tmp2.wav", "gain", "3"])
-        # mix with static noise and trim
-        res1 = check_output(["soxi", "-D", "tmp2.wav"])
-        print(res1)
-        print("'"+str(float(res1))+"'")
-        call(["sox", "-m", "tmp2.wav", "fx/static_22k.wav", "res.wav", "trim", "0", str(float(res1))])
-        # now, play it
-        print("'"+volume+"'")
-        call(["amixer", "-D", "pulse", "sset", "Master", volume])
-        # os.system("aplay codeccall.wav")
-        # os.system("aplay codecopen.wav")
-        os.system("aplay res.wav")
-        # os.system("aplay codecover.wav")
-        # remove the file
-        os.remove(local_wav)
+    if not announces_enabled and m_key == "":
+        return("WARNING: announces_enabled is set FALSE, and no key is used, thus no announcement!")
+    if radio_speech(announce, volume):
         return("OK")
     else:
-        send_to_logbook("ERROR", "ERROR getting the TTS file from "+tts_url)
-        return("ERROR getting the TTS file from "+tts_url)
+        return("ERROR getting the TTS file, check logs...")
 
 
 # =======================================================
@@ -168,7 +234,8 @@ wait_at_startup = th_config.getint('main', 'wait_at_startup')
 keys_lifespan = th_config.getint('http', 'lifespan')
 hostname = th_config.get('http', 'hostname')
 port = th_config.getint('http', 'port')
-default_volume = th_config.get('main', 'default_volume')
+default_volume = th_config.getint('main', 'default_volume')
+announces_enabled = th_config.getboolean('main', 'announces_enabled')
 # also: getfloat, getint, getboolean
 
 # log
