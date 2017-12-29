@@ -18,7 +18,6 @@ import re
 import sys
 import socket
 import time
-
 import serial
 
 
@@ -59,12 +58,31 @@ b'HIT!\r\n'
 # helpers
 
 def send_to_logbook(log_type, msg):
+    """
+    write to remote logbook (pushover may be sent for "INFO", SMS for "ERROR" or "ALARM")
+    """
     try:
         requests.get(logbook_url, params={'log_type': log_type, 'machine': machine_name, 'service': service_name, 'message': msg},
                      timeout=logbook_timeout)
     except Exception as e:
         log.error(e.__str__())
         log.error("*** ERROR reaching logbook on "+str(logbook_url)+" ***")
+
+
+def notify(type, msg):
+    """
+    log & write to logbook, depending on the notification level
+    """
+    if type == "DEBUG":
+        log.debug(msg)
+    elif type == "INFO":
+        log.info(msg)
+    elif type == "WARNING":
+        log.warning(msg)
+        send_to_logbook(type, msg)
+    elif type == "ERROR":
+        log.error(msg)
+        send_to_logbook(type, msg)
 
 
 # =======================================================
@@ -109,6 +127,10 @@ send_to_logbook("WARNING", "Restarting...")
 
 s = serial.Serial('/dev/ttyACM0')
 print(s.name)
-line = s.readline()
-print(line)
+while True:
+    keyword = s.readline().decode("ASCII").rstrip()
+    if keyword == "PIR1":
+        print("PIR1 déclenché!")
+    if keyword == "PIR2":
+        print("PIR2 déclenché!")
 s.close()
