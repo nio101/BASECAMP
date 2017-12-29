@@ -142,44 +142,61 @@
 
     <div class="demo-grid mdc-layout-grid">
             <div class="mdc-layout-grid__inner">
-                <div class="mdc-card mdc-layout-grid__cell--span-3 mdc-elevation--z24">
-                    <section class="mdc-card__primary">
-                      <h1 class="mdc-card__title mdc-card__title--large">MODE</h1>
-                      <h2 class="mdc-card__subtitle">Subtitle here</h2>
+                <div class="mdc-card mdc-layout-grid__cell--span-2 mdc-elevation--z24" style="justify-content: inherit;">
+                	<section class="mdc-card__primary">
+                      <h1 class="mdc-card__title mdc-card__title--large">RADIO</h1>
+                      <h2 class="mdc-card__subtitle">Opératrice radio</h2>
                     </section>
-                    <section class="mdc-card__actions">
-                      <button class="mdc-button mdc-button--compact mdc-card__action mdc-ripple-surface">Action 1</button>
-                      <button class="mdc-button mdc-button--compact mdc-card__action mdc-ripple-surface">Action 2</button>
-                    </section>
-                </div>
-                <div class="mdc-card mdc-layout-grid__cell--span-3 mdc-elevation--z24">
-                    <section class="mdc-card__primary">
-                      <h1 class="mdc-card__title mdc-card__title--large">CHAUFFAGE</h1>
-                      <h2 class="mdc-card__subtitle">Subtitle here</h2>
-                    </section>
-                    <section class="mdc-card__actions">
-                      <button class="mdc-button mdc-button--compact mdc-card__action">Action 1</button>
-                      <button class="mdc-button mdc-button--compact mdc-card__action">Action 2</button>
+                    <section class="mdc-card__actions" style="margin-top:-5px;">
+                      <div class="demo-switch-wrapper">
+                      	  <label for="basic-switch--dark" class="mdc-switch-label" style="margin-left:8px;"><i>Annonces vocales:</i></label>
+                          <div class="mdc-switch" style="margin-left:40px;">
+                            <input id="basic-switch--dark" class="mdc-switch__native-control" type="checkbox">
+                            <div class="mdc-switch__background">
+                              <div class="mdc-switch__knob"></div>
+                            </div>
+                          </div>
+                       </div>
                     </section>
                 </div>
-                <div class="mdc-card mdc-layout-grid__cell--span-3 mdc-elevation--z24">
-                    <section class="mdc-card__primary">
-                      <h1 class="mdc-card__title mdc-card__title--large">EAU</h1>
-                      <h2 class="mdc-card__subtitle">Subtitle here</h2>
+                <div class="mdc-card mdc-layout-grid__cell--span-2 mdc-elevation--z24" style="justify-content: inherit;">
+                	<section class="mdc-card__primary">
+                      <h1 class="mdc-card__title mdc-card__title--large">VEILLEUSES</h1>
+                      <h2 class="mdc-card__subtitle">Lumières de nuit</h2>
                     </section>
-                    <section class="mdc-card__actions">
-                      <button class="mdc-button mdc-button--compact mdc-card__action">Action 1</button>
-                      <button class="mdc-button mdc-button--compact mdc-card__action">Action 2</button>
-                    </section>
-                </div>
-                <div class="mdc-card mdc-layout-grid__cell--span-3 mdc-elevation--z24">
-                    <section class="mdc-card__primary">
-                      <h1 class="mdc-card__title mdc-card__title--large">ELECTRICITE</h1>
-                      <h2 class="mdc-card__subtitle">Subtitle here</h2>
-                    </section>
-                    <section class="mdc-card__actions">
-                      <button class="mdc-button mdc-button--compact mdc-card__action">Action 1</button>
-                      <button class="mdc-button mdc-button--compact mdc-card__action">Action 2</button>
+                    <section class="mdc-card__actions" style="margin-top:-15px;">
+						  <div class="demo-radio-row">
+					          <div class="mdc-form-field">
+					            <div class="mdc-radio mdc-ripple-upgraded mdc-ripple-upgraded--unbounded" style="--mdc-ripple-fg-size:24px; --mdc-ripple-fg-scale:2.773689270621825; --mdc-ripple-left:8px; --mdc-ripple-top:8px;">
+					              <input class="mdc-radio__native-control" id="ex3-default-radio1" checked="" name="ex3-default" type="radio">
+					              <div class="mdc-radio__background">
+					                <div class="mdc-radio__outer-circle"></div>
+					                <div class="mdc-radio__inner-circle"></div>
+					              </div>
+					            </div>
+					            <label id="ex3-default-radio1-label" for="ex3-default-radio1">AUTO</label>
+					          </div>
+					          <div class="mdc-form-field">
+					            <div class="mdc-radio mdc-ripple-upgraded mdc-ripple-upgraded--unbounded" style="--mdc-ripple-fg-size:24px; --mdc-ripple-fg-scale:2.773689270621825; --mdc-ripple-left:8px; --mdc-ripple-top:8px;">
+					              <input class="mdc-radio__native-control" id="ex3-default-radio2" name="ex3-default" type="radio">
+					              <div class="mdc-radio__background">
+					                <div class="mdc-radio__outer-circle"></div>
+					                <div class="mdc-radio__inner-circle"></div>
+					              </div>
+					            </div>
+					            <label id="ex3-default-radio2-label" for="ex3-default-radio2">ON</label>
+					          </div>
+					          <div class="mdc-form-field">
+					            <div class="mdc-radio mdc-ripple-upgraded mdc-ripple-upgraded--unbounded" style="--mdc-ripple-fg-size:24px; --mdc-ripple-fg-scale:2.773689270621825; --mdc-ripple-left:8px; --mdc-ripple-top:8px;">
+					              <input class="mdc-radio__native-control" id="ex3-default-radio2" name="ex3-default" type="radio">
+					              <div class="mdc-radio__background">
+					                <div class="mdc-radio__outer-circle"></div>
+					                <div class="mdc-radio__inner-circle"></div>
+					              </div>
+					            </div>
+					            <label id="ex3-default-radio2-label" for="ex3-default-radio2">OFF</label>
+					          </div>
+					        </div>
                     </section>
                 </div>
             </div>
@@ -215,9 +232,8 @@
 
                     <section class="mdc-card__primary">
                     <button class="mdc-fab material-icons mdc-ripple-surface" aria-label="Favorite" style="--mdc-ripple-fg-size:33.6px; --mdc-ripple-fg-scale:2.654641651574206; --mdc-ripple-fg-translate-start:10.7px, -11.8px; --mdc-ripple-fg-translate-end:11.2px, 11.2px;">
-                      <span class="mdc-fab__icon">
-                        favorite_border
-                      </span>
+                      <object data="radio_mic.svg" type="image/svg+xml">
+                      </object>
                     </button>
                     </section>
 
