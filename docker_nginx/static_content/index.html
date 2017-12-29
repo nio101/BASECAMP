@@ -142,16 +142,42 @@
 
     <div class="demo-grid mdc-layout-grid">
             <div class="mdc-layout-grid__inner">
-                <div class="mdc-card mdc-layout-grid__cell--span-2 mdc-elevation--z24" style="justify-content: inherit;">
+                
+                <div class="mdc-card mdc-layout-grid__cell--span-2 mdc-elevation--z24 mdc-ripple-surface" style="justify-content: inherit;">
+                  
+                  <div class="mdc-card__horizontal-block">
+                    <section class="mdc-card__actions">
+                          <object data="basecamp_logo_inv.svg" type="image/svg+xml" height="60" style="margin-top:23px;margin-left:10px;">
+                          </object>
+                    </section>
+                    <section class="mdc-card__primary">                      
+                        <h1 class="mdc-card__title mdc-card__title--large">BASECAMP</h1>
+                        <h2 id="datetime" class="mdc-card__subtitle mdc-typography--caption"></h2>
+                    </section>
+                  </div>
+                </div>
+
+                <div class="mdc-card mdc-layout-grid__cell--span-2 mdc-elevation--z24 mdc-ripple-surface" style="justify-content: inherit;">
                 	<section class="mdc-card__primary">
+                      <div id="radio_progressbar" role="progressbar" class="mdc-linear-progress mdc-linear-progress--indeterminate" style="display:none;">
+                          <div class="mdc-linear-progress__buffering-dots"></div>
+                          <div class="mdc-linear-progress__buffer"></div>
+                          <div class="mdc-linear-progress__bar mdc-linear-progress__primary-bar">
+                            <span class="mdc-linear-progress__bar-inner"></span>
+                          </div>
+                          <div class="mdc-linear-progress__bar mdc-linear-progress__secondary-bar">
+                            <span class="mdc-linear-progress__bar-inner"></span>
+                          </div>
+                      </div>
                       <h1 class="mdc-card__title mdc-card__title--large">RADIO</h1>
                       <h2 class="mdc-card__subtitle">Opératrice radio</h2>
                     </section>
+                    
                     <section class="mdc-card__actions" style="margin-top:-5px;">
                       <div class="demo-switch-wrapper">
                       	  <label for="basic-switch--dark" class="mdc-switch-label" style="margin-left:8px;"><i>Annonces vocales:</i></label>
                           <div class="mdc-switch" style="margin-left:40px;">
-                            <input id="basic-switch--dark" class="mdc-switch__native-control" type="checkbox">
+                            <input id="switch_announces" class="mdc-switch__native-control" type="checkbox">
                             <div class="mdc-switch__background">
                               <div class="mdc-switch__knob"></div>
                             </div>
@@ -159,10 +185,11 @@
                        </div>
                     </section>
                 </div>
-                <div class="mdc-card mdc-layout-grid__cell--span-2 mdc-elevation--z24" style="justify-content: inherit;">
+
+                <div class="mdc-card mdc-layout-grid__cell--span-2 mdc-elevation--z24 mdc-ripple-surface" style="justify-content: inherit;">
                 	<section class="mdc-card__primary">
                       <h1 class="mdc-card__title mdc-card__title--large">VEILLEUSES</h1>
-                      <h2 class="mdc-card__subtitle">Lumières de nuit</h2>
+                      <h2 id="datetime" class="mdc-card__subtitle">Lumières de nuit</h2>
                     </section>
                     <section class="mdc-card__actions" style="margin-top:-15px;">
 						  <div class="demo-radio-row">
@@ -387,6 +414,12 @@
           updatePanel(dotIndex);
           updateDot(dotIndex);
         })
+    </script>
+
+    <script src="moment-with-locales.min.js"></script>
+    <script src="main.js"></script>
+
+    <script type="text/javascript">
     </script>
 
   </body>
