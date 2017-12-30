@@ -229,3 +229,8 @@ use a dedicated script in `/etc/network/if-up.d` to send a logbook notification 
 3. SMS_operator (+60s)
 4. interphone (+75s)
 5. all other (+90s)
+
+## maintenance
+### influxdb
++ if reint influxdb, we have to manually create a new 'basecamp' database:
+`docker run --rm --link=influxdb -it influxdb:alpine influx -host influxdb` then `create database basecamp`
