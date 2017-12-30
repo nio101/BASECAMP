@@ -70,8 +70,36 @@ scp_to_hosts: stop
 	# heater
 	ssh bc-power "sudo rm -rf ~/heater"
 	scp -r heater bc-power:~/
+	# interphone
+	ssh bc-ui "sudo rm -rf ~/interphone"
+	scp -r interphone bc-ui:~/
+	# logbook
+	ssh bc-watch "sudo rm -rf ~/logbook"
+	scp -r logbook bc-watch:~/
+	# PIR_scanner
+	# TODO
+	# power
+	ssh bc-power "sudo rm -rf ~/power"
+	scp -r power bc-power:~/
+	# pushover_operator
+	ssh bc-watch "sudo rm -rf ~/pushover_operator"
+	scp -r pushover_operator bc-watch:~/
+	# scheduler
+	ssh bc-hq "sudo rm -rf ~/scheduler"
+	scp -r scheduler bc-hq:~/
+	# SMS_operator
+	ssh bc-watch "sudo rm -rf ~/SMS_operator"
+	scp -r SMS_operator bc-watch:~/
+	# veilleuse
+	ssh bc-veilleuse "sudo rm -rf ~/veilleuse"
+	scp -r veilleuse bc-veilleuse:~/
+	# watchdog_master
+	# TODO
+	# water
+	ssh bc-water "sudo rm -rf ~/water"
+	scp -r water bc-water:~/
 
-deploy: stop scp_to_hosts scp_supervisord_conf_to_hosts start
+deploy: stop scp_to_hosts scp_supervisord_conf_to_hosts scp_private_ini start
 
 clean:
 	rm -f MANIFEST

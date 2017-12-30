@@ -2,6 +2,8 @@
 <html>
 
   <head>
+    <meta charset="UTF-8">
+    
     <title>Material Components for the web</title>
     
     <link rel="stylesheet"
@@ -157,9 +159,10 @@
                   </div>
                 </div>
 
-                <div class="mdc-card mdc-layout-grid__cell--span-2 mdc-elevation--z24 mdc-ripple-surface" style="justify-content: inherit;">
+                <div class="mdc-card mdc-layout-grid__cell--span-2 mdc-elevation--z24 mdc-ripple-surface" style="justify-content:inherit;">
                 	<section class="mdc-card__primary">
-                      <div id="radio_progressbar" role="progressbar" class="mdc-linear-progress mdc-linear-progress--indeterminate" style="display:none;">
+                      <h1 class="mdc-card__title mdc-card__title--large">RADIO
+                      <div id="radio_progressbar" role="progressbar" class="mdc-linear-progress mdc-linear-progress--indeterminate" style="vertical-align:middle;width:40%;display:inline-block;margin-left:70px;">
                           <div class="mdc-linear-progress__buffering-dots"></div>
                           <div class="mdc-linear-progress__buffer"></div>
                           <div class="mdc-linear-progress__bar mdc-linear-progress__primary-bar">
@@ -168,8 +171,7 @@
                           <div class="mdc-linear-progress__bar mdc-linear-progress__secondary-bar">
                             <span class="mdc-linear-progress__bar-inner"></span>
                           </div>
-                      </div>
-                      <h1 class="mdc-card__title mdc-card__title--large">RADIO</h1>
+                      </div></h1>
                       <h2 class="mdc-card__subtitle">Opératrice radio</h2>
                     </section>
                     
@@ -177,7 +179,7 @@
                       <div class="demo-switch-wrapper">
                       	  <label for="basic-switch--dark" class="mdc-switch-label" style="margin-left:8px;"><i>Annonces vocales:</i></label>
                           <div class="mdc-switch" style="margin-left:40px;">
-                            <input id="switch_announces" class="mdc-switch__native-control" type="checkbox">
+                            <input id="switch_announces" class="mdc-switch__native-control" type="checkbox" onclick="switch_announces_clicked();">
                             <div class="mdc-switch__background">
                               <div class="mdc-switch__knob"></div>
                             </div>

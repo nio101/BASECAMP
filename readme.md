@@ -232,5 +232,5 @@ use a dedicated script in `/etc/network/if-up.d` to send a logbook notification 
 
 ## maintenance
 ### influxdb
-+ if reint influxdb, we have to manually create a new 'basecamp' database:
++ if influxdb is purged, we have to manually create a new 'basecamp' database:
 `docker run --rm --link=influxdb -it influxdb:alpine influx -host influxdb` then `create database basecamp`

@@ -106,6 +106,7 @@ def radio_speech(announce, volume):
         send_to_logbook("ERROR", "ERROR getting the TTS file from "+tts_url)
         return False
 
+
 # =======================================================
 # HTTP requests
 
@@ -134,20 +135,20 @@ def do_set_default_volume():
     return("OK, default_volume has been set to {}%.".format(default_volume))
 
 
-@get('/enable_annouces')
-def do_enable_annouces():
+@get('/enable_announces')
+def do_enable_announces():
     global announces_enabled
     announces_enabled = True
-    radio_speech("Cool! Contente d'être de retour sur les ondes!", str(default_volume)+"%")
+    radio_speech("Opératrice à son poste!", str(default_volume)+"%")
     update_ini()
     return("OK, announces_enabled has been set to {}.".format(announces_enabled))
 
 
-@get('/disable_annouces')
-def do_disable_annouces():
+@get('/disable_announces')
+def do_disable_announces():
     global announces_enabled
     announces_enabled = False
-    radio_speech("Okay! Je vais me taire à partir de maintenant, bye...", str(default_volume)+"%")
+    radio_speech("Silence radio!", str(default_volume)+"%")
     update_ini()
     return("OK, announces_enabled has been set to {}.".format(announces_enabled))
 
