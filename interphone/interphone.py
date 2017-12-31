@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
 """
@@ -6,7 +6,7 @@ interphone service
 
 dependencies: logbook, TTS server
 
-(python2.7/python3 compatible)
+(python3 compatible)
 """
 
 import logging

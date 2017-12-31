@@ -3,12 +3,12 @@
 
   <head>
     <meta charset="UTF-8">
-    <meta http-equiv="refresh" content="30">
+    <!-- <meta http-equiv="refresh" content="30">
     <meta http-equiv="cache-control\" content="max-age=0">
     <meta http-equiv="cache-control\" content="no-cache">
     <meta http-equiv="expires" content="0">
     <meta http-equiv="expires" content="Tue, 01 Jan 1980 1:00:00 GMT">
-    <meta http-equiv="pragma" content="no-cache">    
+    <meta http-equiv="pragma" content="no-cache">  -->
     <title>-= BASECAMP =-</title>
     
     <link rel="stylesheet"
@@ -164,7 +164,7 @@
                   </div>
                 </div>
 
-                <div class="mdc-card mdc-layout-grid__cell--span-2 mdc-elevation--z24 mdc-ripple-surface" style="justify-content:inherit;">
+                <div class="mdc-card mdc-layout-grid__cell--span-2 mdc-elevation--z24" style="justify-content:inherit;">
                 	<section class="mdc-card__primary">
                       <h1 class="mdc-card__title mdc-card__title--large">RADIO
                       <div id="radio_progressbar" role="progressbar" class="mdc-linear-progress mdc-linear-progress--indeterminate" style="vertical-align:middle;width:40%;display:inline-block;margin-left:70px;">
@@ -179,10 +179,31 @@
                       </div></h1>
                       <h2 class="mdc-card__subtitle">Opératrice radio</h2>
                     </section>
-                    
-                    <section class="mdc-card__actions" style="margin-top:-5px;">
+
+                    <section class="mdc-card__actions" style="margin-top:0px;margin-bottom:10px;">
+                      <label for="basic-switch--dark" class="mdc-switch-label" style="margin-left:8px;"><i>Volume:</i></label>
+                        <div style="width: 65%;height: 24px;margin-top: -15px;margin-left: 15px;z-index: 0;">
+                          <div id="radio_slider" class="mdc-slider mdc-slider--discrete mdc-slider--display-markers" tabindex="0" role="slider" aria-valuemin="35" aria-valuemax="70" aria-valuenow="60" data-step="5" aria-label="Select Value">
+                            <div class="mdc-slider__track-container">
+                              <div class="mdc-slider__track" style="transform: scaleX(0.285714);"></div>
+                              <div class="mdc-slider__track-marker-container"><div class="mdc-slider__track-marker"></div><div class="mdc-slider__track-marker"></div><div class="mdc-slider__track-marker"></div><div class="mdc-slider__track-marker"></div><div class="mdc-slider__track-marker"></div><div class="mdc-slider__track-marker"></div><div class="mdc-slider__track-marker"></div></div>
+                            </div>
+                            <div class="mdc-slider__thumb-container" style="transform: translateX(491.429px) translateX(-50%);">
+                              <div class="mdc-slider__pin">
+                                <span class="mdc-slider__pin-value-marker">45</span>
+                              </div>
+                              <svg class="mdc-slider__thumb" width="21" height="21">
+                                <circle cx="10.5" cy="10.5" r="7.875"></circle>
+                              </svg>
+                              <div class="mdc-slider__focus-ring"></div>
+                            </div>
+                          </div>
+                        </div>
+                    </section>
+                    <br>
+                    <section class="mdc-card__actions" style="margin-top:-5px;margin-bottom:10px;">
                       <div class="demo-switch-wrapper">
-                      	  <label for="basic-switch--dark" class="mdc-switch-label" style="margin-left:8px;"><i>Annonces vocales:</i></label>
+                          <label for="basic-switch--dark" class="mdc-switch-label" style="margin-left:8px;"><i>Annonces vocales:</i></label>
                           <div class="mdc-switch" style="margin-left:40px;">
                             <input id="switch_announces" class="mdc-switch__native-control" type="checkbox" onclick="switch_announces_clicked();">
                             <div class="mdc-switch__background">
@@ -191,6 +212,7 @@
                           </div>
                        </div>
                     </section>
+                    <br>
                 </div>
 
                 <div class="mdc-card mdc-layout-grid__cell--span-2 mdc-elevation--z24 mdc-ripple-surface" style="justify-content: inherit;">
@@ -200,7 +222,7 @@
                     </section>
                     <section class="mdc-card__actions" style="margin-top:-15px;">
 						  <div class="demo-radio-row">
-					          <div class="mdc-form-field">
+					          <div class="mdc-form-field" style="margin-top: 5px;">
 					            <div class="mdc-radio mdc-ripple-upgraded mdc-ripple-upgraded--unbounded" style="--mdc-ripple-fg-size:24px; --mdc-ripple-fg-scale:2.773689270621825; --mdc-ripple-left:8px; --mdc-ripple-top:8px;">
 					              <input class="mdc-radio__native-control" id="ex3-default-radio1" checked="" name="ex3-default" type="radio">
 					              <div class="mdc-radio__background">
@@ -208,7 +230,7 @@
 					                <div class="mdc-radio__inner-circle"></div>
 					              </div>
 					            </div>
-					            <label id="ex3-default-radio1-label" for="ex3-default-radio1">AUTO</label>
+					            <label id="ex3-default-radio1-label" for="ex3-default-radio1">AUTO (luminosité extérieure)</label>
 					          </div>
 					          <div class="mdc-form-field">
 					            <div class="mdc-radio mdc-ripple-upgraded mdc-ripple-upgraded--unbounded" style="--mdc-ripple-fg-size:24px; --mdc-ripple-fg-scale:2.773689270621825; --mdc-ripple-left:8px; --mdc-ripple-top:8px;">
@@ -425,9 +447,6 @@
 
     <script src="moment-with-locales.min.js"></script>
     <script src="main.js"></script>
-
-    <script type="text/javascript">
-    </script>
 
   </body>
 
