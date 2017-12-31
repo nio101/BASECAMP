@@ -18,8 +18,9 @@ function httpGetJSONAsync(theUrl, callback_OK, callback_ERROR)
     xmlHttp.onreadystatechange = function() { 
         if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
             callback_OK(JSON.parse(xmlHttp.responseText));
-        else if (xmlHttp.readyState == 4)
-            callback_ERROR(JSON.parse(xmlHttp.responseText));
+        else
+            if (xmlHttp.readyState == 4)
+                callback_ERROR(xmlHttp.responseText);
     }
     xmlHttp.open("GET", theUrl, true); // true for asynchronous 
     xmlHttp.send(null);
@@ -31,8 +32,9 @@ function httpGetAsync(theUrl, callback_OK, callback_ERROR)
     xmlHttp.onreadystatechange = function() { 
         if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
             callback_OK(xmlHttp.responseText);
-        else if (xmlHttp.readyState == 4)
-            callback_ERROR(xmlHttp.responseText);
+        else
+            if (xmlHttp.readyState == 4)
+                callback_ERROR(xmlHttp.responseText);
     }
     xmlHttp.open("GET", theUrl, true); // true for asynchronous 
     xmlHttp.send(null);
