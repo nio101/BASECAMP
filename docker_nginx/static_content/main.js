@@ -8,7 +8,8 @@ var radio_slider;
 
 function DisplayTime() {
     document.getElementById("datetime").innerHTML =
-        moment().format("dddd Do <br> MMMM <br> HH:mm");
+        //moment().format("dddd Do <br> MMMM <br> HH:mm");
+        moment().format("dddd Do MMMM HH:mm");
         moment().format("LLLL");
     setTimeout("DisplayTime()",3000);
 }
