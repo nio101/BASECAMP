@@ -33,6 +33,7 @@ start:
 	ssh bc-hq "sudo chmod a+x docker_grafana/run_me.sh && docker_grafana/run_me.sh"
 	ssh bc-hq "sudo chmod a+x docker_nginx/run_me.sh && docker_nginx/run_me.sh"
 	# start the services
+	$(foreach host,$(hosts), ssh $(host) sudo supervisorctl update;)
 	$(foreach host,$(hosts), ssh $(host) sudo supervisorctl start all;)
 
 scp_private_ini:
@@ -41,6 +42,7 @@ scp_private_ini:
 	scp _my_private_ini_files_/logbook.ini bc-watch:~/logbook/
 	scp _my_private_ini_files_/pushover_operator.ini bc-watch:~/pushover_operator/
 	scp _my_private_ini_files_/SMS_operator.ini bc-watch:~/SMS_operator/
+	scp _my_private_ini_files_/BT_scanner.ini bc-veilleuse:~/BT_scanner/
 
 get_private_ini:
 	# copying remote private ini file to local dir
@@ -48,6 +50,7 @@ get_private_ini:
 	scp bc-watch:~/logbook/logbook.ini _my_private_ini_files_/
 	scp bc-watch:~/pushover_operator/pushover_operator.ini _my_private_ini_files_/
 	scp bc-watch:~/SMS_operator/SMS_operator.ini _my_private_ini_files_/
+	scp bc-veilleuse:~/BT_scanner/BT_scanner.ini _my_private_ini_files_/
 
 scp_supervisord_conf_to_hosts:
 	# copying supervisord conf files to hosts
@@ -57,6 +60,9 @@ scp_supervisord_conf_to_hosts:
 scp_to_hosts: stop
 	# copying every service source file to hosts
 	# ------------------------------------------
+	# common module to bc-ui
+	ssh bc-ui "sudo rm -rf ~/BASECAMP_commons"
+	scp -r BASECAMP_commons bc-ui:~/
 	# BT_scanner
 	ssh bc-veilleuse "sudo rm -rf ~/BT_scanner"
 	scp -r BT_scanner bc-veilleuse:~/
@@ -77,7 +83,11 @@ scp_to_hosts: stop
 	ssh bc-watch "sudo rm -rf ~/logbook"
 	scp -r logbook bc-watch:~/
 	# PIR_scanner
-	# TODO
+	ssh bc-ui "sudo rm -rf ~/PIR_scanner"
+	scp -r PIR_scanner bc-ui:~/
+	# operator
+	ssh bc-ui "sudo rm -rf ~/operator"
+	scp -r operator bc-ui:~/
 	# power
 	ssh bc-power "sudo rm -rf ~/power"
 	scp -r power bc-power:~/

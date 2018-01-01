@@ -85,6 +85,15 @@ def notify(type, msg):
         send_to_logbook(type, msg)
 
 
+def send_PIR_event(alias):
+    try:
+        requests.get(PIR_event_url, params={'alias': alias},
+                     timeout=PIR_event_timeout)
+    except Exception as e:
+        log.error(e.__str__())
+        notify("ERROR", "Error reaching operator on "+str(PIR_event_url)+" !")
+
+
 # =======================================================
 # init
 service_name = re.search("([^\/]*)\.py", sys.argv[0]).group(1)
@@ -97,6 +106,8 @@ logfile = th_config.get('main', 'logfile')
 logbook_url = th_config.get('main', 'logbook_url')
 logbook_timeout = th_config.getint('main', 'logbook_timeout')
 wait_at_startup = th_config.getint('main', 'wait_at_startup')
+PIR_event_url = th_config.get('PIR', 'PIR_event_url')
+PIR_event_timeout = th_config.getint('PIR', 'PIR_event_timeout')
 # also: getfloat, getint, getboolean
 
 # log
@@ -118,7 +129,7 @@ log.addHandler(fh)
 log.addHandler(ch)
 
 log.warning(service_name+" is (re)starting !")
-# time.sleep(wait_at_startup)
+time.sleep(wait_at_startup)
 
 # send a restart info to logbook
 send_to_logbook("WARNING", "Restarting...")
@@ -131,6 +142,8 @@ while True:
     keyword = s.readline().decode("ASCII").rstrip()
     if keyword == "PIR1":
         print("PIR1 déclenché!")
+        send_PIR_event("PIR1")
     if keyword == "PIR2":
         print("PIR2 déclenché!")
+        send_PIR_event("PIR2")
 s.close()

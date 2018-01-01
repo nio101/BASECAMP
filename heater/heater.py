@@ -420,6 +420,8 @@ def do_set_suppl_profile():
     global suppl_expiration
     global timezone
     if request.query.profile == "":
+        return("ERROR: profile parameter missing!")
+    elif request.query.profile == "None":
         notify("removing suppl_profile \'{}\' that would have expired {}.".format(suppl_profile, suppl_expiration.slang_time()))
         suppl_profile = ""
         suppl_expiration = None
@@ -447,6 +449,8 @@ def do_set_except_profile():
     global except_expiration
     global timezone
     if request.query.profile == "":
+        return("ERROR: profile parameter missing!")
+    elif request.query.profile == "None":
         notify("removing except_profile \'{}\' that would have expired {}.".format(except_profile, except_expiration.slang_time()))
         except_profile = ""
         except_expiration = None
