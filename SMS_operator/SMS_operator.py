@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # coding: utf-8
 
 """
@@ -156,9 +156,16 @@ def send_SMS():
         # Don't write an ERROR to logbook! would create an infinite loop!
         return("ERROR")
 
+
+@get('/signal_level')
+def get_signal_level():
+    level = sm.GetSignalQuality()
+    # return({status: "OK", "GSM_signal_level": level})
+    return(level)
+
+
 # =======================================================
 # incoming SMS check timer function
-
 
 def check_incoming_SMS():
     global consecutive_check_failures

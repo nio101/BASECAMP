@@ -8,18 +8,20 @@ hosts = bc-veilleuse bc-ui bc-water bc-hq bc-watch bc-power
 upgrade_OS:
 	# updating/upgrading every host's OS
 	# ----------------------------------
-	$(foreach host,$(hosts), ssh $(host) sudo supervisorctl stop all;)
+	$(foreach host,$(hosts), ssh $(host) "sudo supervisorctl stop all";)
+	$(foreach host,$(hosts), ssh $(host) "sudo apt update && sudo apt upgrade -y";)
+
 
 restart:
 	# restarting every host
 	# ---------------------
-	$(foreach host,$(hosts), ssh $(host) sudo shutdown -r now;)
+	$(foreach host,$(hosts), ssh $(host) "sudo shutdown -r now";)
 
 stop:
 	# stopping every service on every host using supervisord
 	# ------------------------------------------------------
 	# stop the services
-	$(foreach host,$(hosts), ssh $(host) sudo supervisorctl stop all;)
+	$(foreach host,$(hosts), ssh $(host) "sudo supervisorctl stop all";)
 	# stop also the docker containers on bc-hq
 	-ssh bc-hq "docker stop grafana && docker rm grafana"
 	-ssh bc-hq "docker stop influxdb && docker rm influxdb"
