@@ -63,42 +63,45 @@ def check_applicable_profile():
     global suppl_profile
     global suppl_expiration
 
-    if except_profile != "":
-        # is it expired?
-        now = maya.now()
-        if now > except_expiration:
-            notify("removing except_profile \'{}\' that expired {}.".format(except_profile, except_expiration.slang_time()))
-            except_profile = ""
-            except_expiration = None
-            update_ini()
-        else:
-            # not expired, then applicable
-            if current_profile != except_profile:
-                current_profile = except_profile
-                notify("except_profile \'{}\' applicable for {}.".format(except_profile, except_expiration.slang_time()))
-                read_profile_settings(current_profile)
+    try:
+        if except_profile != "":
+            # is it expired?
+            now = maya.now()
+            if now > except_expiration:
+                notify("removing except_profile \'{}\' that expired {}.".format(except_profile, except_expiration.slang_time()))
+                except_profile = ""
+                except_expiration = None
+                update_ini()
+            else:
+                # not expired, then applicable
+                if current_profile != except_profile:
+                    current_profile = except_profile
+                    notify("except_profile \'{}\' applicable for {}.".format(except_profile, except_expiration.slang_time()))
+                    read_profile_settings(current_profile)
 
-    if (except_profile == "") and (suppl_profile != ""):
-        # is it expired?
-        now = maya.now()
-        if now > suppl_expiration:
-            notify("removing suppl_profile \'{}\' that expired {}.".format(suppl_profile, suppl_expiration.slang_time()))
-            suppl_profile = ""
-            suppl_expiration = None
-            update_ini()
-        else:
-            # not expired, then applicable
-            if current_profile != suppl_profile:
-                current_profile = suppl_profile
-                notify("suppl_profile \'{}\' applicable for {}.".format(suppl_profile, suppl_expiration.slang_time()))
-                read_profile_settings(current_profile)
+        if (except_profile == "") and (suppl_profile != ""):
+            # is it expired?
+            now = maya.now()
+            if now > suppl_expiration:
+                notify("removing suppl_profile \'{}\' that expired {}.".format(suppl_profile, suppl_expiration.slang_time()))
+                suppl_profile = ""
+                suppl_expiration = None
+                update_ini()
+            else:
+                # not expired, then applicable
+                if current_profile != suppl_profile:
+                    current_profile = suppl_profile
+                    notify("suppl_profile \'{}\' applicable for {}.".format(suppl_profile, suppl_expiration.slang_time()))
+                    read_profile_settings(current_profile)
 
-    if (except_profile == "") and (suppl_profile == ""):
-        # use the base_profile
-        if current_profile != base_profile:
-            current_profile = base_profile
-            notify("base_profile \'{}\' is becoming the current profile.".format(current_profile))
-            read_profile_settings(current_profile)
+        if (except_profile == "") and (suppl_profile == ""):
+            # use the base_profile
+            if current_profile != base_profile:
+                current_profile = base_profile
+                notify("base_profile \'{}\' is becoming the current profile.".format(current_profile))
+                read_profile_settings(current_profile)
+    except:
+        notify("ERROR", "check_applicable_profile() failed!?! check the program's STDOUT!")
     return
 
 
@@ -244,10 +247,10 @@ def check_temp_update():
     global delta_temp_plus
     global delta_temp_minus
 
-    check_applicable_profile()
-
     t = Timer(30, check_temp_update)
     t.start()
+
+    check_applicable_profile()
 
     (sensor_name, sec_sensor_name) = determine_sensors()
     try:
@@ -458,11 +461,14 @@ def do_set_except_profile():
         check_applicable_profile()
         return("OK")
     if request.query.profile in profile_list:
-        except_profile = request.query.profile
+        if request.query.expiration == "":
+            return("ERROR: expiration parameter missing! example: '2017-12-23 08:23:45'")
         try:
             except_expiration = maya.MayaDT.from_rfc2822(request.query.expiration+' '+timezone)
         except:
+            except_expiration = None
             return("ERROR: couldn't parse the expiration field. example: '2017-12-23 08:23:45'")
+        except_profile = request.query.profile
         notify("added except_profile \'{}\' that will expire {}.".format(except_profile, except_expiration.slang_time()))
         update_ini()
         check_applicable_profile()

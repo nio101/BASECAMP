@@ -1,5 +1,11 @@
 # Evolutions BASECAMP
 
++ pour tous les timers dans les services, faire en sorte que le starttimer soit au début de la fonction, sinon en cas d'erreur avant le nouveau start, on perd le timer, mais le programme continue! Ou alors mettre en try/except tout ce qui est avant le start du timer!
+
++ modifier les supervisord.conf pour sortir les logs dans les répertoires des services (STDOUT)... pas de STDERR? - tester et améliorer sur heater par exemple
+
++ watchdog: mettre des warnings sur temp hautes et basses dans la maison ou données trop vieilles
+
 + compléter le module BASECAMP_commons
     * tester bc.influxDB
 
