@@ -1,5 +1,18 @@
 # Evolutions BASECAMP
 
+TODO:
+
++ mettre un serveur web pour chaque service, pour faciliter le ping sur /alive avec en retour la version+build contenus dans _version_.py
++ pour chaque service, charger _version_.py et l'ajouter dans le restart...
++ revoir le process de restart:
+  - log.info("Restarting!")
+  - log.info("Waiting {} seconds")
+  - sleep
+  - notify("{service} {version+build} restarted!")
+  - pour tous les serveurs multithreadés, utiliser gevent + monkeypatch, mais pas gunicorn qui fout la merde avec les logs!
+    from gevent import monkey; monkey.patch_all()
+    run(..., server='gevent')
+
 + pour tous les timers dans les services, faire en sorte que le starttimer soit au début de la fonction, sinon en cas d'erreur avant le nouveau start, on perd le timer, mais le programme continue! Ou alors mettre en try/except tout ce qui est avant le start du timer!
 
 + modifier les supervisord.conf pour sortir les logs dans les répertoires des services (STDOUT)... pas de STDERR? - tester et améliorer sur heater par exemple

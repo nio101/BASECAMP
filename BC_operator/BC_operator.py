@@ -19,13 +19,13 @@ import sys
 from json import dumps
 from subprocess import check_output
 from threading import Timer
-# BASECAMP_commons import
+# BC_commons import
 from inspect import getsourcefile
 import os.path
 current_dir = os.path.dirname(os.path.abspath(getsourcefile(lambda: 0)))
 sys.path.insert(0, current_dir[:current_dir.rfind(os.path.sep)])
-import BASECAMP_commons as bc
-from BASECAMP_commons import influxDB
+import BC_commons as bc
+from BC_commons import influxDB
 sys.path.pop(0)  # remove parent dir from sys.path
 
 
@@ -50,21 +50,21 @@ def regular_check():
 
 @get('/alive')
 def do_alive():
-    return "OK"
+    return(bc.version)
 
 
 @get('/PIR_event')
 def do_PIR_event():
-    if request.params.alias=="":
+    if request.params.alias == "":
         return("ERROR: alias param is missing!")
-    elif request.params.alias=="PIR2":
+    elif request.params.alias == "PIR2":
         # PIR1 is for front screen UI detection
         # force the display on
         try:
             res = check_output(["sh -c \'export DISPLAY=:0; xset dpms force on\'"], shell=True)
         except:
-            return("ERROR trying to set display on!")
-    elif request.params.alias=="PIR1":
+            return("ERROR trying to set display on! "+res)
+    elif request.params.alias == "PIR1":
         pass
     return("OK")
 
@@ -74,7 +74,7 @@ def do_PIR_event():
 
 # after that, you can use ThMode.ECO or ThMode.COMFORT as values for variables
 
-# .ini
+# local .ini
 startup_wait = bc.config.getint('startup', 'wait')
 # also: getfloat, getint, getboolean
 # read the aliases & BT_addresses

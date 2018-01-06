@@ -4,6 +4,16 @@
 # be able to directly access any host with 'ssh <host>'...
 
 hosts = bc-veilleuse bc-ui bc-water bc-hq bc-watch bc-power
+services = BT_scanner PIR_scanner SMS_operator heater interphone logbook BC_operator power pushover_operator scheduler veilleuse water
+containers = grafana influxdb nginx
+
+version:
+	@/bin/echo -e "\x1B[01;93m -= Updating version file =- \x1B[0m"
+	@sleep 1
+	./update_version.sh
+	@cat _version_.txt
+	$(foreach service,$(services), scp _version_.txt $(service)/;)
+
 
 upgrade_OS:
 	@/bin/echo -e "\x1B[01;93m -= Upgrading each host's OS packages =- \x1B[0m"
@@ -22,9 +32,7 @@ stop:
 	# stop the services
 	$(foreach host,$(hosts), ssh $(host) "sudo supervisorctl stop all";)
 	# stop also the docker containers on bc-hq
-	-ssh bc-hq "docker stop grafana && docker rm grafana"
-	-ssh bc-hq "docker stop influxdb && docker rm influxdb"
-	-ssh bc-hq "docker stop nginx && docker rm nginx"
+	-$(foreach container,$(containers), ssh bc-hq "docker stop $(container) && docker rm $(container)";)
 
 start:
 	@/bin/echo -e "\x1B[01;93m -= starting every service on every host using supervisord =- \x1B[0m"
@@ -62,8 +70,8 @@ scp_to_hosts: stop
 	@/bin/echo -e "\x1B[01;93m -= copying every service source file to hosts =- \x1B[0m"
 	@sleep 1
 	# common module to bc-ui
-	ssh bc-ui "sudo rm -rf ~/BASECAMP_commons"
-	scp -r BASECAMP_commons bc-ui:~/
+	ssh bc-ui "sudo rm -rf ~/BC_commons"
+	scp -r BC_commons bc-ui:~/
 	# BT_scanner
 	ssh bc-veilleuse "sudo rm -rf ~/BT_scanner"
 	scp -r BT_scanner bc-veilleuse:~/
@@ -86,9 +94,9 @@ scp_to_hosts: stop
 	# PIR_scanner
 	ssh bc-ui "sudo rm -rf ~/PIR_scanner"
 	scp -r PIR_scanner bc-ui:~/
-	# operator
-	ssh bc-ui "sudo rm -rf ~/operator"
-	scp -r operator bc-ui:~/
+	# BC_operator
+	ssh bc-ui "sudo rm -rf ~/BC_operator"
+	scp -r BC_operator bc-ui:~/
 	# power
 	ssh bc-power "sudo rm -rf ~/power"
 	scp -r power bc-power:~/
@@ -110,5 +118,5 @@ scp_to_hosts: stop
 	ssh bc-water "sudo rm -rf ~/water"
 	scp -r water bc-water:~/
 
-deploy: stop scp_to_hosts scp_supervisord_conf_to_hosts scp_private_ini start
+deploy: version stop scp_to_hosts scp_supervisord_conf_to_hosts scp_private_ini start
 	@/bin/echo -e "\x1B[01;93m -= done! =- \x1B[0m"

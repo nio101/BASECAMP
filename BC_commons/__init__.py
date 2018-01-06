@@ -1,7 +1,7 @@
 # __init.py__
 
 """
-BASECAMP_commons
+BC_commons
 
 groups all the things common to the various scripts
 
@@ -56,17 +56,20 @@ def notify(type, msg):
 service_name = re.search("([^\/]*)\.py", sys.argv[0]).group(1)
 machine_name = socket.gethostname()
 
+# version
+with open('_version_.txt', 'r') as version_file:
+    version = version_file.read()
+
 # .ini
 config = configparser.ConfigParser()
 # read default config file in commons dir
-config.read_file(open("../BASECAMP_commons/BASECAMP_config.ini"))
+config.read_file(open("../BC_commons/base_config.ini"))
 # read optional config file in local service dir
 config.read(service_name+".ini")
 logbook_url = config.get('logbook', 'logbook_url')
 logbook_timeout = config.getint('logbook', 'logbook_timeout')
 hostname = config.get('web_server', 'hostname')
 port = config.getint('web_server', 'port')
-workers = config.getint('web_server', 'workers')
 # also: getfloat, getint, getboolean
 
 # .log
@@ -86,4 +89,4 @@ ch.setFormatter(formatter)
 log.addHandler(fh)
 log.addHandler(ch)
 
-print("*** BASECAMP_commons: base config file loaded and logs initialized! ***")
+print("*** BC_commons: base config file loaded, version and logs initialized! ***")

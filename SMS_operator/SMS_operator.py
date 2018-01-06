@@ -4,9 +4,9 @@
 """
 Basecamp web_server sample skeleton
 
-dependencies: GSM modem with SIM card, logbook
+dependencies: GSM modem with SIM card + gammu + python-gammu, logbook
 
-(python2/python3 compatible)
+(python3 compatible)
 note:   webserver may not be multi-threaded/non-blocking.
         if needed, use bottle with gunicorn for example.
 """

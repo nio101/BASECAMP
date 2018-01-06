@@ -1,7 +1,7 @@
 # influxDB.py
 
 """
-BASECAMP_commons - influxDB sub_module
+BC_commons - influxDB sub_module
 
 handles all the read/write stuff with influxDB
 
@@ -10,7 +10,7 @@ handles all the read/write stuff with influxDB
 """
 
 
-import BASECAMP_commons as bc
+import BC_commons as bc
 from influxdb import InfluxDBClient
 import datetime
 
@@ -48,4 +48,4 @@ _influxdb_query_url = "http://"+_influxdb_host+":"+_influxdb_port+"/query"
 client = InfluxDBClient(_influxdb_host, _influxdb_port)
 client.switch_database('basecamp')
 print("influxDB will be contacted on "+str(_influxdb_host)+":"+str(_influxdb_port))
-print("*** BASECAMP_commons/influxDB: influxDB client initialized ***")
+print("*** BC_commons/influxDB: influxDB client initialized ***")
