@@ -228,7 +228,9 @@ use a dedicated script in `/etc/network/if-up.d` to send a logbook notification 
 2. pushover (+15s)
 3. SMS_operator (+60s)
 4. interphone (+75s)
-5. all other (+90s)
+
+for every other module: add +15s to the latest dependency
+=> +90s for a service using interphone for example
 
 ## maintenance
 ### influxdb

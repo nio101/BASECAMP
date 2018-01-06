@@ -2,7 +2,8 @@
 
 TODO:
 
-+ mettre un serveur web pour chaque service, pour faciliter le ping sur /alive avec en retour la version+build contenus dans _version_.py
++ pour tous les serveurs, mettre la version en retour dans le /alive
++ cabler chaque service sur BC_commons
 + pour chaque service, charger _version_.py et l'ajouter dans le restart...
 + revoir le process de restart:
   - log.info("Restarting!")
