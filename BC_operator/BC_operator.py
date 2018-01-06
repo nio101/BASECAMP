@@ -91,5 +91,4 @@ bc.notify("WARNING", "has restarted!")
 # run baby, run!
 # regular_check()
 
-if bc.workers == 1:
-    run(host=bc.hostname, port=bc.port, server='gevent')
+run(host=bc.hostname, port=bc.port, server='gevent')
