@@ -1,3 +1,0 @@
-pkill -9 -f zmq_fw.py
-echo forwarder has been stopped...
-
