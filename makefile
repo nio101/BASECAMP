@@ -7,15 +7,18 @@ hosts = bc-veilleuse bc-ui bc-water bc-hq bc-watch bc-power
 
 upgrade_OS:
 	@/bin/echo -e "\x1B[01;93m -= Upgrading each host's OS packages =- \x1B[0m"
+	@sleep 1
 	$(foreach host,$(hosts), ssh $(host) "sudo supervisorctl stop all";)
 	$(foreach host,$(hosts), ssh -tt $(host) "sudo apt update && sudo apt upgrade -y";)
 
 restart:
 	@/bin/echo -e "\x1B[01;93m -= Restarting each host =- \x1B[0m"
+	@sleep 1
 	$(foreach host,$(hosts), ssh $(host) "sudo shutdown -r now";)
 
 stop:
 	@/bin/echo -e "\x1B[01;93m -= stopping every service on every host using supervisord =- \x1B[0m"
+	@sleep 1
 	# stop the services
 	$(foreach host,$(hosts), ssh $(host) "sudo supervisorctl stop all";)
 	# stop also the docker containers on bc-hq
@@ -25,6 +28,7 @@ stop:
 
 start:
 	@/bin/echo -e "\x1B[01;93m -= starting every service on every host using supervisord =- \x1B[0m"
+	@sleep 1
 	# start the docker containers on bc-hq
 	ssh bc-hq "sudo chmod a+x docker_influxdb/run_me.sh && docker_influxdb/run_me.sh"
 	ssh bc-hq "sudo chmod a+x docker_grafana/run_me.sh && docker_grafana/run_me.sh"
@@ -35,6 +39,7 @@ start:
 
 scp_private_ini:
 	@/bin/echo -e "\x1B[01;93m -= copying local private ini files to hosts =- \x1B[0m"
+	@sleep 1
 	scp _my_private_ini_files_/logbook.ini bc-watch:~/logbook/
 	scp _my_private_ini_files_/pushover_operator.ini bc-watch:~/pushover_operator/
 	scp _my_private_ini_files_/SMS_operator.ini bc-watch:~/SMS_operator/
@@ -42,6 +47,7 @@ scp_private_ini:
 
 get_private_ini:
 	@/bin/echo -e "\x1B[01;93m -= copying remote private ini file to local dir =- \x1B[0m"
+	@sleep 1
 	scp bc-watch:~/logbook/logbook.ini _my_private_ini_files_/
 	scp bc-watch:~/pushover_operator/pushover_operator.ini _my_private_ini_files_/
 	scp bc-watch:~/SMS_operator/SMS_operator.ini _my_private_ini_files_/
@@ -49,10 +55,12 @@ get_private_ini:
 
 scp_supervisord_conf_to_hosts:
 	@/bin/echo -e "\x1B[01;93m -= copying supervisord conf files to hosts =- \x1B[0m"
+	@sleep 1
 	$(foreach host,$(hosts), scp supervisord_conf_files/$(host)_supervisord.conf $(host):~/supervisord.conf;)
 
 scp_to_hosts: stop
 	@/bin/echo -e "\x1B[01;93m -= copying every service source file to hosts =- \x1B[0m"
+	@sleep 1
 	# common module to bc-ui
 	ssh bc-ui "sudo rm -rf ~/BASECAMP_commons"
 	scp -r BASECAMP_commons bc-ui:~/
@@ -103,3 +111,4 @@ scp_to_hosts: stop
 	scp -r water bc-water:~/
 
 deploy: stop scp_to_hosts scp_supervisord_conf_to_hosts scp_private_ini start
+	@/bin/echo -e "\x1B[01;93m -= done! =- \x1B[0m"
