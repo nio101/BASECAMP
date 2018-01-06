@@ -1,2 +1,10 @@
+# log files
 *.log
-_my_very_own_conf_files/
+
+# my private ini files
+_my_private_ini_files_/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
