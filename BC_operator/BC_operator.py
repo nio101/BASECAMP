@@ -2,7 +2,7 @@
 # coding: utf-8
 
 """
-operator - handles vocal interactions and presence/absence detection
+BC_operator - handles vocal interactions and presence/absence detection
 and applicable corresponding rules/actions
 
 - depends on other services: logbook, PIR_scanner, BT_scanner
@@ -15,6 +15,7 @@ and applicable corresponding rules/actions
 
 from gevent import monkey; monkey.patch_all()
 import time
+import requests
 from bottle import run, request, get, response
 import sys
 from json import dumps
@@ -37,13 +38,18 @@ class PreMode:   # reflects the current presence mode
     COCOON, ASLEEP, LOCKOUT = range(3)
 
 
-"""
-def regular_check():
-    print("*** regular check() ***")
-    t = Timer(5.0, regular_check)
+def alive_check():
+    print("*** performing alive check() ***")
+    t = Timer(bc.alive_frequency, alive_check)
     t.start()
+    try:
+        requests.get(bc.alive_url, params={'service': bc.service_name, 'version': bc.version},
+                     timeout=bc.alive_timeout)
+    except Exception as e:
+        bc.log.error(e.__str__())
+        bc.log.error("*** ERROR reaching alive_url on "+str(bc.alive_url)+" ***")
+        bc.notify("ERROR", "*** ERROR reaching alive_url on "+str(bc.alive_url)+" ***")
     return
-"""
 
 
 # =======================================================
@@ -84,11 +90,12 @@ for key in bc.config['BT']:
     BT_aliases[key] = bc.config['BT'][key]
 
 # startup sync & notification
-print("sleeping {} seconds for startup sync between services...".format(startup_wait))
+bc.log.info("--= Restarting =--")
+bc.log.info("sleeping {} seconds for startup sync between services...".format(startup_wait))
 time.sleep(startup_wait)
-bc.notify("WARNING", "has restarted!")
+bc.notify("WARNING", bc.service_name+" "+bc.version+" (re)started on machine "+bc.machine_name)
 
 # run baby, run!
-# regular_check()
+alive_check()
 
 run(host=bc.hostname, port=bc.port, server='gevent')

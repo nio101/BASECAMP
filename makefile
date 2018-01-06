@@ -4,7 +4,7 @@
 # be able to directly access any host with 'ssh <host>'...
 
 hosts = bc-veilleuse bc-ui bc-water bc-hq bc-watch bc-power
-services = BT_scanner PIR_scanner SMS_operator heater interphone logbook BC_operator power pushover_operator scheduler veilleuse water
+services = BT_scanner PIR_scanner SMS_operator heater interphone logbook BC_operator power pushover_operator scheduler veilleuse water nightwatch
 containers = grafana influxdb nginx
 
 version:
@@ -72,6 +72,9 @@ scp_to_hosts: stop
 	# common module to bc-ui
 	ssh bc-ui "sudo rm -rf ~/BC_commons"
 	scp -r BC_commons bc-ui:~/
+	# common module to bc-watch
+	ssh bc-watch "sudo rm -rf ~/BC_commons"
+	scp -r BC_commons bc-watch:~/
 	# BT_scanner
 	ssh bc-veilleuse "sudo rm -rf ~/BT_scanner"
 	scp -r BT_scanner bc-veilleuse:~/
@@ -112,8 +115,9 @@ scp_to_hosts: stop
 	# veilleuse
 	ssh bc-veilleuse "sudo rm -rf ~/veilleuse"
 	scp -r veilleuse bc-veilleuse:~/
-	# watchdog_master
-	# TODO
+	# nightwatch
+	ssh bc-watch "sudo rm -rf ~/nightwatch"
+	scp -r nightwatch bc-watch:~/
 	# water
 	ssh bc-water "sudo rm -rf ~/water"
 	scp -r water bc-water:~/

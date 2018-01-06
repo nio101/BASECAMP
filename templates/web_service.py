@@ -12,6 +12,7 @@ Template for a basic BASECAMP service with a web_server+timer
 # =======================================================
 # Imports
 
+from gevent import monkey; monkey.patch_all()
 import time
 from bottle import run, request, get, response
 import sys
@@ -23,8 +24,8 @@ from inspect import getsourcefile
 import os.path
 current_dir = os.path.dirname(os.path.abspath(getsourcefile(lambda: 0)))
 sys.path.insert(0, current_dir[:current_dir.rfind(os.path.sep)])
-import BASECAMP_commons as bc
-from BASECAMP_commons import influxDB
+import BC_commons as bc
+from BC_commons import influxDB
 sys.path.pop(0)  # remove parent dir from sys.path
 
 
@@ -101,14 +102,12 @@ for key in bc.config['BT']:
     BT_aliases[key] = bc.config['BT'][key]
 
 # startup sync & notification
-print("sleeping {} seconds for startup sync between services...".format(startup_wait))
+bc.log.info("--= Restarting =--")
+bc.log.info("sleeping {} seconds for startup sync between services...".format(startup_wait))
 time.sleep(startup_wait)
-bc.notify("WARNING", "has restarted!")
+bc.notify("WARNING", bc.version+" - (re)started!")
 
 # run baby, run!
 regular_check()
 
-if bc.workers == 1:
-    run(host=bc.hostname, port=bc.port)
-else:
-    run(host=bc.hostname, port=bc.port, server="gunicorn", workers=bc.workers)
+run(host=bc.hostname, port=bc.port, server='gevent')
