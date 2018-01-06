@@ -6,18 +6,16 @@
 hosts = bc-veilleuse bc-ui bc-water bc-hq bc-watch bc-power
 
 upgrade_OS:
-	echo -e "\x1B[01;93m -= Upgrading each host's OS packages =- \x1B[0m"
+	@/bin/echo -e "\x1B[01;93m -= Upgrading each host's OS packages =- \x1B[0m"
 	$(foreach host,$(hosts), ssh $(host) "sudo supervisorctl stop all";)
 	$(foreach host,$(hosts), ssh -tt $(host) "sudo apt update && sudo apt upgrade -y";)
 
-
 restart:
-	echo -e "\x1B[01;93m -= Restarting each host =- \x1B[0m"
+	@/bin/echo -e "\x1B[01;93m -= Restarting each host =- \x1B[0m"
 	$(foreach host,$(hosts), ssh $(host) "sudo shutdown -r now";)
 
 stop:
-	# 
-	echo -e "\x1B[01;93m -= stopping every service on every host using supervisord =- \x1B[0m"
+	@/bin/echo -e "\x1B[01;93m -= stopping every service on every host using supervisord =- \x1B[0m"
 	# stop the services
 	$(foreach host,$(hosts), ssh $(host) "sudo supervisorctl stop all";)
 	# stop also the docker containers on bc-hq
@@ -26,7 +24,7 @@ stop:
 	-ssh bc-hq "docker stop nginx && docker rm nginx"
 
 start:
-	echo -e "\x1B[01;93m -= starting every service on every host using supervisord =- \x1B[0m"
+	@/bin/echo -e "\x1B[01;93m -= starting every service on every host using supervisord =- \x1B[0m"
 	# start the docker containers on bc-hq
 	ssh bc-hq "sudo chmod a+x docker_influxdb/run_me.sh && docker_influxdb/run_me.sh"
 	ssh bc-hq "sudo chmod a+x docker_grafana/run_me.sh && docker_grafana/run_me.sh"
@@ -36,25 +34,25 @@ start:
 	$(foreach host,$(hosts), ssh $(host) sudo supervisorctl start all;)
 
 scp_private_ini:
-	echo -e "\x1B[01;93m -= copying local private ini files to hosts =- \x1B[0m"
+	@/bin/echo -e "\x1B[01;93m -= copying local private ini files to hosts =- \x1B[0m"
 	scp _my_private_ini_files_/logbook.ini bc-watch:~/logbook/
 	scp _my_private_ini_files_/pushover_operator.ini bc-watch:~/pushover_operator/
 	scp _my_private_ini_files_/SMS_operator.ini bc-watch:~/SMS_operator/
 	scp _my_private_ini_files_/BT_scanner.ini bc-veilleuse:~/BT_scanner/
 
 get_private_ini:
-	echo -e "\x1B[01;93m -= copying remote private ini file to local dir =- \x1B[0m"
+	@/bin/echo -e "\x1B[01;93m -= copying remote private ini file to local dir =- \x1B[0m"
 	scp bc-watch:~/logbook/logbook.ini _my_private_ini_files_/
 	scp bc-watch:~/pushover_operator/pushover_operator.ini _my_private_ini_files_/
 	scp bc-watch:~/SMS_operator/SMS_operator.ini _my_private_ini_files_/
 	scp bc-veilleuse:~/BT_scanner/BT_scanner.ini _my_private_ini_files_/
 
 scp_supervisord_conf_to_hosts:
-	echo -e "\x1B[01;93m -= copying supervisord conf files to hosts =- \x1B[0m"
+	@/bin/echo -e "\x1B[01;93m -= copying supervisord conf files to hosts =- \x1B[0m"
 	$(foreach host,$(hosts), scp supervisord_conf_files/$(host)_supervisord.conf $(host):~/supervisord.conf;)
 
 scp_to_hosts: stop
-	echo -e "\x1B[01;93m -= copying every service source file to hosts =- \x1B[0m"
+	@/bin/echo -e "\x1B[01;93m -= copying every service source file to hosts =- \x1B[0m"
 	# common module to bc-ui
 	ssh bc-ui "sudo rm -rf ~/BASECAMP_commons"
 	scp -r BASECAMP_commons bc-ui:~/
