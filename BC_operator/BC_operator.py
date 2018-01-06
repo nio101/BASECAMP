@@ -13,6 +13,7 @@ and applicable corresponding rules/actions
 # =======================================================
 # Imports
 
+from gevent import monkey; monkey.patch_all()
 import time
 from bottle import run, request, get, response
 import sys
@@ -91,6 +92,4 @@ bc.notify("WARNING", "has restarted!")
 # regular_check()
 
 if bc.workers == 1:
-    run(host=bc.hostname, port=bc.port)
-else:
-    run(host=bc.hostname, port=bc.port, server="gunicorn", workers=bc.workers)
+    run(host=bc.hostname, port=bc.port, server='gevent')

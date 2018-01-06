@@ -17,6 +17,10 @@ TODO:
 
 + modifier les supervisord.conf pour sortir les logs dans les répertoires des services (STDOUT)... pas de STDERR? - tester et améliorer sur heater par exemple
 
++ donner plus de vocabulaire aux annonces du scheduler / heure
++ toutes les 30mn le matin quand je bosse, mais pas que je suis en vacances (profil de chauffage sur semaine_vacances), ou bien le week-end!
++ sinon toutes les heures, et le week-end et si vacances, pas avant 10h, et pas après 22h!
+
 + watchdog: mettre des warnings sur temp hautes et basses dans la maison ou données trop vieilles
 
 + compléter le module BASECAMP_commons
