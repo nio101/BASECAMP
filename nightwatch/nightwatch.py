@@ -83,8 +83,12 @@ def do_status():
     status['alive_check'] = []
     now = datetime.datetime.now()
     for service in services:
-        status['alive_check'].append({'service': service, 'version': service_version[service], 'last_seen_ts': service_TS[service].strftime("%A %d %B %H:%M:%S"),
-                                      'last_seen_seconds_ago': str(int((now - service_TS[service]).total_seconds()))+" seconds ago"})
+        if service_version[service] == "???":
+            status['alive_check'].append({'service': service, 'version': service_version[service], 'last_seen_ts': '???',
+                                          'last_seen_seconds_ago': '???'})
+        else:
+            status['alive_check'].append({'service': service, 'version': service_version[service], 'last_seen_ts': service_TS[service].strftime("%A %d %B %H:%M:%S"),
+                                          'last_seen_slang': bc.slang(now - service_TS[service])})
     return(status)
 
 

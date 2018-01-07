@@ -5,68 +5,51 @@
 scheduler service
 
 dependencies: logbook, interphone
+
+TODO:
+    + donner plus de vocabulaire aux annonces du scheduler / heure
+    + toutes les 30mn le matin quand je bosse, mais pas quand je suis en vacances (profil de chauffage sur semaine_vacances), ou bien le week-end!
+    + sinon toutes les heures, et le week-end et si vacances, pas avant 10h, et pas après 22h!
+    * toutes les 5mn, aller grabber une image du flux vidéo des carpes ! :)
+        - sera utilisé sur la page web d'accueil! :)
+    + faire en sorte que scheduler puisse lire mon agenda et me rappeler les trucs pour lesquels j'ai mis un TAG spécifique genre "BASECAMP-1d", et du coup, il me rappelle le RV la veille au soir, à mon retour (ou par SMS, ou les deux). Ou bien "BASECAMP-3h" et il me rappelle le RV 3h avant... :)
+        + mettre le calendrier des poubelles! :)
+    + pour les annonces d'heure, ajouter des variantes marrantes, et aussi un commentaire... "et tout va bien ici..." ou bien "On a quelques soucis, ici, quand tu auras un moment... merci!". Scanner la présence BT par exemple pour varier en ajoutant les Alias (Nico, Natacha)...
+    + conditionner les annonces vocales d'heure en mode cocoon exclusivement.
 """
 
-import logging
-import logging.handlers
-import configparser
 import requests
 import time
 import schedule
-import re
 import sys
-import socket
+# BC_commons import
+from inspect import getsourcefile
+from threading import Timer
+import os.path
+current_dir = os.path.dirname(os.path.abspath(getsourcefile(lambda: 0)))
+sys.path.insert(0, current_dir[:current_dir.rfind(os.path.sep)])
+import BC_commons as bc
+# from BC_commons import influxDB
+sys.path.pop(0)  # remove parent dir from sys.path
 
 
 # =======================================================
 # helpers
 
-def send_to_logbook(log_type, msg):
-    try:
-        requests.get(logbook_url, params={'log_type': log_type, 'machine': machine_name, 'service': service_name, 'message': msg},
-                     timeout=logbook_timeout)
-    except Exception as e:
-        log.error(e.__str__())
-        log.error("*** ERROR reaching logbook on "+str(logbook_url)+" ***")
-
-
 # =======================================================
-# init
-service_name = re.search("([^\/]*)\.py", sys.argv[0]).group(1)
-machine_name = socket.gethostname()
 
-# .ini
-th_config = configparser.ConfigParser()
-th_config.read(service_name+".ini")
-logfile = th_config.get('main', 'logfile')
-logbook_url = th_config.get('main', 'logbook_url')
-logbook_timeout = th_config.getint('main', 'logbook_timeout')
-interphone_url = th_config.get('main', 'interphone_url')
-wait_at_startup = th_config.getint('main', 'wait_at_startup')
-# also: getfloat, getint, getboolean
-
-# log
-log = logging.getLogger(service_name)
-log.setLevel(logging.DEBUG)
-# create file handler
-fh = logging.handlers.RotatingFileHandler(
-              logfile, maxBytes=8000000, backupCount=5)
-fh.setLevel(logging.DEBUG)
-# create console hangler with higher level
-ch = logging.StreamHandler()
-ch.setLevel(logging.INFO)
-# create formatter and add it to the handlers
-formatter = logging.Formatter('%(asctime)s - [%(name)s] %(levelname)s: %(message)s')
-fh.setFormatter(formatter)
-ch.setFormatter(formatter)
-# add the handlers to the logger
-log.addHandler(fh)
-log.addHandler(ch)
-
-log.warning(service_name+" is (re)starting !")
-time.sleep(wait_at_startup)
-# send a restart info to logbook
-send_to_logbook("WARNING", "Restarting...")
+def alive_check():
+    bc.log.info("*** performing alive check() ***")
+    t = Timer(bc.alive_frequency, alive_check)
+    t.start()
+    try:
+        requests.get(bc.alive_url, params={'service': bc.service_name, 'version': bc.version},
+                     timeout=bc.alive_timeout)
+    except Exception as e:
+        bc.log.error(e.__str__())
+        bc.log.error("*** ERROR reaching alive_url on "+str(bc.alive_url)+" ***")
+        bc.notify("ERROR", "*** ERROR reaching alive_url on "+str(bc.alive_url)+" ***")
+    return
 
 
 # =======================================================
@@ -78,11 +61,28 @@ def job(h, m):
         announce = "Nico! Il est déjà "+h+"h!"
     else:
         announce = "Nico! Il est déjà "+h+"h"+m+"!"
-    requests.get(interphone_url, params={'service': service_name, 'announce': announce})
+    requests.get(interphone_url, params={'service': bc.service_name, 'announce': announce}, timeout=interphone_timeout)
 
 
 # =======================================================
 # main stuff
+
+# local .ini
+startup_wait = bc.config.getint('startup', 'wait')
+# also: getfloat, getint, getboolean
+interphone_url = bc.config.get('interphone', 'interphone_url')
+interphone_timeout = bc.config.getint('interphone', 'interphone_timeout')
+
+# startup sync & notification
+bc.log.info("--= Restarting =--")
+bc.log.info("sleeping {} seconds for startup sync between services...".format(startup_wait))
+time.sleep(startup_wait)
+bc.notify("WARNING", bc.service_name+" "+bc.version+" (re)started on machine "+bc.machine_name)
+
+# run baby, run!
+alive_check()
+
+# scheduler init
 
 hours = []
 # announce only between 7h00-22h30
@@ -105,4 +105,4 @@ schedule.every().wednesday.at("13:15").do(job)
 
 while True:
     schedule.run_pending()
-    time.sleep(2)
+    time.sleep(10)

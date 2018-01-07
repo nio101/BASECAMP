@@ -57,21 +57,24 @@ def slang(td):
     ex.: 'a few seconds ago', 'a few minutes ago', 'an hour ago'...
     """
     if td.total_seconds() < 60:
-        return("a few seconds ago")
+        if td.total_seconds() == 1:
+            return("1 second ago")
+        else:
+            return("{} seconds ago".format(td.total_seconds()))
     elif td.total_seconds() < 3600:
-        minutes = td.total_seconds() / 60
+        minutes = int(td.total_seconds() / 60)
         if minutes == 1:
             return("1 minute ago")
         else:
             return("{} minutes ago".format(minutes))
     elif td.total_seconds() < 24*3600:
-        hours = td.total_seconds() / 3600
+        hours = int(td.total_seconds() / 3600)
         if hours == 1:
             return("1 hour ago")
         else:
             return("{} hours ago".format(hours))
     else:
-        days = td.total_seconds() / 24*3600
+        days = int(td.total_seconds() / 24*3600)
         if days == 1:
             return("1 day ago")
         else:

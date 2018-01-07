@@ -22,10 +22,6 @@ TODO:
 
 + modifier les supervisord.conf pour sortir les logs dans les répertoires des services (STDOUT)... pas de STDERR? - tester et améliorer sur heater par exemple
 
-+ donner plus de vocabulaire aux annonces du scheduler / heure
-+ toutes les 30mn le matin quand je bosse, mais pas que je suis en vacances (profil de chauffage sur semaine_vacances), ou bien le week-end!
-+ sinon toutes les heures, et le week-end et si vacances, pas avant 10h, et pas après 22h!
-
 + watchdog: mettre des warnings sur temp hautes et basses dans la maison ou données trop vieilles
 
 + compléter le module BASECAMP_commons
@@ -61,14 +57,6 @@ fonte:Roboto, ou bien utiliser fontes:
       + Coolvetica
       + Alte Haas Grotesk Regular
       + Neue Haas Grotesk
-
-+ Scheduler:
-    * toutes les 5mn, aller grabber une image du flux vidéo des carpes ! :)
-        - sera utilisé sur la page web d'accueil! :)
-    + faire en sorte que scheduler puisse lire mon agenda et me rappeler les trucs pour lesquels j'ai mis un TAG spécifique genre "BASECAMP-1d", et du coup, il me rappelle le RV la veille au soir, à mon retour (ou par SMS, ou les deux). Ou bien "BASECAMP-3h" et il me rappelle le RV 3h avant... :)
-        + mettre le calendrier des poubelles! :)
-    + pour les annonces d'heure, ajouter des variantes marrantes, et aussi un commentaire... "et tout va bien ici..." ou bien "On a quelques soucis, ici, quand tu auras un moment... merci!". Scanner la présence BT par exemple pour varier en ajoutant les Alias (Nico, Natacha)...
-    + conditionner les annonces vocales d'heure en mode cocoon exclusivement.
 
 + Music:
     + commande du/des ZipMini (de deezer devices en général) via l'API de Deezer

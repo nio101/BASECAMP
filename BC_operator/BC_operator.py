@@ -78,8 +78,6 @@ def do_PIR_event():
 # =======================================================
 # main loop
 
-# after that, you can use ThMode.ECO or ThMode.COMFORT as values for variables
-
 # local .ini
 startup_wait = bc.config.getint('startup', 'wait')
 # also: getfloat, getint, getboolean

@@ -69,12 +69,9 @@ scp_supervisord_conf_to_hosts:
 scp_to_hosts: stop
 	@/bin/echo -e "\x1B[01;93m -= copying every service source file to hosts =- \x1B[0m"
 	@sleep 1
-	# common module to bc-ui
-	ssh bc-ui "sudo rm -rf ~/BC_commons"
-	scp -r BC_commons bc-ui:~/
-	# common module to bc-watch
-	ssh bc-watch "sudo rm -rf ~/BC_commons"
-	scp -r BC_commons bc-watch:~/
+	# BC_commons module to every host
+	$(foreach host,$(hosts), ssh $(host) "sudo rm -rf ~/BC_commons";)
+	$(foreach host,$(hosts), scp -r BC_commons $(host):~/;)
 	# BT_scanner
 	ssh bc-veilleuse "sudo rm -rf ~/BT_scanner"
 	scp -r BT_scanner bc-veilleuse:~/
