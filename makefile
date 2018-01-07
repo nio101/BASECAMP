@@ -8,7 +8,7 @@ services = BT_scanner PIR_scanner SMS_operator heater interphone logbook BC_oper
 containers = grafana influxdb nginx
 
 version:
-	@/bin/echo -e "\x1B[01;93m -= Updating version file =- \x1B[0m"
+	# updating version file
 	@sleep 1
 	./update_version.sh
 	@cat _version_.txt

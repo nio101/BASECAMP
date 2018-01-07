@@ -72,7 +72,7 @@ logbook_timeout = config.getint('logbook', 'logbook_timeout')
 hostname = config.get('web_server', 'hostname')
 port = config.getint('web_server', 'port')
 alive_url = config.get('alive_check', 'url')
-alive_frequency = config.get('alive_check', 'frequency')
+alive_frequency = config.getint('alive_check', 'frequency')
 alive_timeout = config.getint('alive_check', 'http_timeout')
 # also: getfloat, getint, getboolean
 

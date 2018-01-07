@@ -16,9 +16,8 @@ and applicable corresponding rules/actions
 from gevent import monkey; monkey.patch_all()
 import time
 import requests
-from bottle import run, request, get, response
+from bottle import run, request, get
 import sys
-from json import dumps
 from subprocess import check_output
 from threading import Timer
 # BC_commons import
@@ -27,7 +26,7 @@ import os.path
 current_dir = os.path.dirname(os.path.abspath(getsourcefile(lambda: 0)))
 sys.path.insert(0, current_dir[:current_dir.rfind(os.path.sep)])
 import BC_commons as bc
-from BC_commons import influxDB
+# from BC_commons import influxDB
 sys.path.pop(0)  # remove parent dir from sys.path
 
 

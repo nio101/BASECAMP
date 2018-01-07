@@ -41,8 +41,8 @@ def review_alive_checks():
     """
     alive_check timestamp regular check
     """
-    print("*** regular check() ***")
-    t = Timer(60, review_alive_checks)
+    print("*** alive check() review ***")
+    t = Timer(alive_review_frequency, review_alive_checks)
     t.start()
     now = datetime.datetime.now()
     for service in services:
@@ -59,7 +59,7 @@ def review_alive_checks():
 
 @get('/alive')
 def do_alive():
-    return(bc.version)
+    return(bc.service_name+" "+bc.version)
 
 
 @get('/alive_check')
@@ -83,8 +83,8 @@ def do_status():
     status['alive_check'] = []
     now = datetime.datetime.now()
     for service in services:
-        status['alive_check'].append({'service': service, 'last_seen_ts': service_TS[service].strftime("%A %d %B %H:%M:%S"),
-                                      'last_seen_seconds_ago': str((now - service_TS[service]).total_seconds())+" seconds ago"})
+        status['alive_check'].append({'service': service, 'version': service_version[service], 'last_seen_ts': service_TS[service].strftime("%A %d %B %H:%M:%S"),
+                                      'last_seen_seconds_ago': str(int((now - service_TS[service]).total_seconds()))+" seconds ago"})
     return(status)
 
 
@@ -94,6 +94,7 @@ def do_status():
 # local .ini
 startup_wait = bc.config.getint('startup', 'wait')
 max_delay = bc.config.getint('alive_check', 'max_delay')
+alive_review_frequency = bc.config.getint('alive_check', 'review_frequency')
 # also: getfloat, getint, getboolean
 
 # read the service/machine list
