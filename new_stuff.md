@@ -2,6 +2,10 @@
 
 TODO:
 
++ virer le module maya et faire mon propre module qui ne met pas 3h à se charger
++ avec fonction .slang qui permet de dire "dans 3mn", ou bien "il y a 5h" avec sortie en fr et en anglais
++ du coup virer maya des services/projets
+
 + pour tous les serveurs, mettre la version en retour dans le /alive
 + cabler chaque service sur BC_commons
 + pour chaque service, charger _version_.py et l'ajouter dans le restart...

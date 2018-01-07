@@ -8,7 +8,7 @@ nightwatch - the last hope in case of critical failure!
 features:
 * receives periodical pings from services (with version details).
   if no ping is received from a given service after a given delay,
-  raises an alarm and tries to reboot the machine
+  raises an alarm (and tries to reboot the machine?)
 
 - depends on other services: logbook, SMS_operator, pushover_operator
 - for python3
@@ -20,10 +20,9 @@ features:
 
 from gevent import monkey; monkey.patch_all()
 import time
-from bottle import run, request, get, response
+import datetime
+from bottle import run, request, get
 import sys
-from json import dumps
-from subprocess import check_output
 from threading import Timer
 # BC_commons import
 from inspect import getsourcefile
@@ -31,7 +30,7 @@ import os.path
 current_dir = os.path.dirname(os.path.abspath(getsourcefile(lambda: 0)))
 sys.path.insert(0, current_dir[:current_dir.rfind(os.path.sep)])
 import BC_commons as bc
-from BC_commons import influxDB
+# from BC_commons import influxDB
 sys.path.pop(0)  # remove parent dir from sys.path
 
 
@@ -45,12 +44,13 @@ def review_alive_checks():
     print("*** regular check() ***")
     t = Timer(60, review_alive_checks)
     t.start()
-    now = time.time()
+    now = datetime.datetime.now()
     for service in services:
-        if (now - service_TS[service]) > max_delay:
-            bc.notify("ALARM", "Service '"+service+"'' has not checked alive for a least "+str(max_delay)+" seconds!")
-            bc.notify("INFO", "Will now try to reboot machine '"+service_machine[service]+"'.")
-            # TODO: try to reboot the remote machine!
+        if (now - service_TS[service]).total_seconds() > max_delay:
+            bc.notify("ALARM", "Service '"+service+"'' has not checked alive for "+str((now - service_TS[service]).total_seconds())+" seconds!")
+            # bc.notify("INFO", "Will now try to reboot machine '"+service_machine[service]+"'.")
+            # TODO: try to reboot the remote machine?
+            # !!! do not reboot the same machine multiple times, establish a list of rebooting machines or reset timers for services on the same machine
     return
 
 
@@ -77,6 +77,17 @@ def do_alive_check():
     return("OK")
 
 
+@get('/status')
+def do_status():
+    status = {}
+    status['alive_check'] = []
+    now = datetime.datetime.now()
+    for service in services:
+        status['alive_check'].append({'service': service, 'last_seen_ts': service_TS[service].strftime("%A %d %B %H:%M:%S"),
+                                      'last_seen_seconds_ago': str((now - service_TS[service]).total_seconds())+" seconds ago"})
+    return(status)
+
+
 # =======================================================
 # main loop
 
@@ -94,7 +105,7 @@ service_version = {}
 for key in bc.config['services']:
     services.append(key)
     service_machine[key] = bc.config['services'][key]
-    service_TS[key] = time.time()
+    service_TS[key] = datetime.datetime.now()
     service_version[key] = "???"
 
 # startup sync & notification

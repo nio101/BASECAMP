@@ -14,7 +14,7 @@ sudo pip3 install -U <liste outdated modules>
 pip freeze > requirements.txt
 pip install -r requirements.txt --upgrade
 
-NightWatchdog ou watchdog:
+nightwatch:
 - [ ] chauffage: mettre une alerte/info si confort pendant la nuit (oubli force_confort?) ou mettre durée d'application du force_confort!
 + idem si des métriques majeures/critiques sont trop vieilles... => problème!
 
