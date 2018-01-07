@@ -47,7 +47,7 @@ def review_alive_checks():
     now = datetime.datetime.now()
     for service in services:
         if (now - service_TS[service]).total_seconds() > max_delay:
-            bc.notify("ALARM", "Service '"+service+"'' has not checked alive for "+str((now - service_TS[service]).total_seconds())+" seconds!")
+            bc.notify("ALARM", "Service '"+service+"'' has not checked alive for "+bc.slang(now - service_TS[service]))
             # bc.notify("INFO", "Will now try to reboot machine '"+service_machine[service]+"'.")
             # TODO: try to reboot the remote machine?
             # !!! do not reboot the same machine multiple times, establish a list of rebooting machines or reset timers for services on the same machine
@@ -72,7 +72,7 @@ def do_alive_check():
         return("ERROR: version param is missing!")
     if request.params.service not in services:
         return("ERROR: service value is unknown!")
-    service_TS[request.params.service] = time.time()
+    service_TS[request.params.service] = datetime.datetime.now()
     service_version[request.params.service] = request.params.version
     return("OK")
 

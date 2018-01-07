@@ -17,6 +17,7 @@ import socket
 import requests
 import logging
 import logging.handlers
+import datetime
 
 
 # =======================================================
@@ -48,6 +49,33 @@ def notify(type, msg):
     elif type == "ERROR":
         log.error(msg)
         send_to_logbook(type, msg)
+
+
+def slang(td):
+    """
+    converts timedelta to an approximate textual description
+    ex.: 'a few seconds ago', 'a few minutes ago', 'an hour ago'...
+    """
+    if td.total_seconds() < 60:
+        return("a few seconds ago")
+    elif td.total_seconds() < 3600:
+        minutes = td.total_seconds() / 60
+        if minutes == 1:
+            return("1 minute ago")
+        else:
+            return("{} minutes ago".format(minutes))
+    elif td.total_seconds() < 24*3600:
+        hours = td.total_seconds() / 3600
+        if hours == 1:
+            return("1 hour ago")
+        else:
+            return("{} hours ago".format(hours))
+    else:
+        days = td.total_seconds() / 24*3600
+        if days == 1:
+            return("1 day ago")
+        else:
+            return("{} days ago".format(days))
 
 
 # =======================================================
