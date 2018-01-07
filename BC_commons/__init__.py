@@ -63,6 +63,7 @@ version = version.rstrip("\n\r")
 
 # .ini
 config = configparser.ConfigParser()
+config.optionxform = str
 # read default config file in commons dir
 config.read_file(open("../BC_commons/base_config.ini"))
 # read optional config file in local service dir

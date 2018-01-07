@@ -41,7 +41,7 @@ def review_alive_checks():
     """
     alive_check timestamp regular check
     """
-    print("*** alive check() review ***")
+    bc.log.info("*** alive check() review ***")
     t = Timer(alive_review_frequency, review_alive_checks)
     t.start()
     now = datetime.datetime.now()
