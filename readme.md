@@ -2,6 +2,9 @@
 
 ## Todo
 
+bug qd heater -> set profile à vide alors qu'il n'y en a pas... => bim
++re-tester le set/reset...
+
 _tools:
 - [ ] utiliser un makefile
 pour déployer, pécho les ini, redémarrer les machines, les MAJ, et faire un 
