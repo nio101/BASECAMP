@@ -58,9 +58,9 @@ def alive_check():
 def job(h, m):
     # ajouter des conditions:
     if (m == "00"):
-        announce = "Nico! Il est déjà "+h+"h!"
+        announce = "Yo! Prends ton temps, man, c'est le week-end, et il n'est que "+h+"h!"
     else:
-        announce = "Nico! Il est déjà "+h+"h"+m+"!"
+        announce = "Yo! Prends ton temps, man, c'est le week-end, et il n'est que  "+h+"h"+m+"!"
     requests.get(interphone_url, params={'service': bc.service_name, 'announce': announce}, timeout=interphone_timeout)
 
 

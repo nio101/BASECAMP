@@ -1,6 +1,68 @@
 # Evolutions BASECAMP
 
+--========= notes
+
+To give the individual tests import context, create a tests/context.py file:
+
+import os
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+import sample
+
+Then, within the individual test modules, import the module like so:
+
+from .context import sample
+
+--=========
+
+init:
+    pip install -r requirements.txt
+
+test:
+    py.test tests
+
+.PHONY: init test
+
+--=========
+
+And, most of all, don’t namespace with underscores, use submodules instead.
+
+# OK
+import library.plugin.foo
+# not OK
+import library.foo_plugin
+
+--=========
+
+A folder with .py files and a __init__.py is called a package. One of those files containing classes and functions is a module. Folder nesting can give you subpackages.
+
+So for example if I had the following structure:
+
+  mypackage
+     __init__.py
+     module_a.py
+     module_b.py
+        mysubpackage
+             __init__.py
+             module_c.py
+             module_d.py
+
+I could import mypackage.module_a or mypackage.mysubpacakge.module_c and so on.
+
+--=========
+
+
 TODO:
+
++ SMS_operator: ajouter gestion des erreurs graves avec exit(1) ne répond plus, etç...
++ Nightwatch doit essayer de rebooter une fois le SMS_operator, et si rien de mieux => le laisser et attendre opération manuelle
++ ajouter du throttling sur pushover & SMS pour éviter le spam...
++ commandes retour en pushover?
+=> help / questions / réponses... développer une CLI
+Idem via SMS, same CLI! :)
+faire un même programme de CLI qui soit client de pushover_operator & SMS_operator!
+=> un même sous-module de BC_commons, genre remote_CLI!:)
 
 + virer le module maya et faire mon propre module qui ne met pas 3h à se charger
 + avec fonction .slang qui permet de dire "dans 3mn", ou bien "il y a 5h" avec sortie en fr et en anglais
