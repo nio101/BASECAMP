@@ -174,7 +174,6 @@ every half an hour, the time will be announced through interphone, according to 
 + interface: 
 + machine: bc-hq
 
-
 ## cam2cam
 rtsp://192.168.1.95/11<br>
 rtsp://192.168.1.95/12

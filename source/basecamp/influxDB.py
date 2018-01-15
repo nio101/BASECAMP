@@ -10,7 +10,8 @@ handles all the read/write stuff with influxDB
 """
 
 
-import BC_commons as bc
+# from . import tools as bc
+import basecamp.tools as bc
 from influxdb import InfluxDBClient
 import datetime
 
@@ -40,12 +41,14 @@ def read(query):
 # =======================================================
 # Init
 
-_influxdb_host = bc.config.get("influxDB", "influxdb_host")
-_influxdb_port = bc.config.get("influxDB", "influxdb_port")
-_influxdb_query_url = "http://"+_influxdb_host+":"+_influxdb_port+"/query"
+def init():
+    global client
+    _influxdb_host = bc.config.get("influxDB", "influxdb_host")
+    _influxdb_port = bc.config.get("influxDB", "influxdb_port")
+    _influxdb_query_url = "http://"+_influxdb_host+":"+_influxdb_port+"/query"
 
-# influxDB init
-client = InfluxDBClient(_influxdb_host, _influxdb_port)
-client.switch_database('basecamp')
-print("influxDB will be contacted on "+str(_influxdb_host)+":"+str(_influxdb_port))
-print("*** BC_commons/influxDB: influxDB client initialized ***")
+    # influxDB init
+    client = InfluxDBClient(_influxdb_host, _influxdb_port)
+    client.switch_database('basecamp')
+    print("influxDB will be contacted on "+str(_influxdb_host)+":"+str(_influxdb_port))
+    print("*** basecamp.influxDB: influxDB client initialized ***")

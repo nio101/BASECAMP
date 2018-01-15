@@ -15,18 +15,16 @@ Template for a basic BASECAMP service with a web_server+timer
 from gevent import monkey; monkey.patch_all()
 import time
 from bottle import run, request, get, response
-import sys
 from json import dumps
 from subprocess import check_output
 from threading import Timer
-# BASECAMP_commons import
-from inspect import getsourcefile
-import os.path
-current_dir = os.path.dirname(os.path.abspath(getsourcefile(lambda: 0)))
-sys.path.insert(0, current_dir[:current_dir.rfind(os.path.sep)])
-import BC_commons as bc
-from BC_commons import influxDB
-sys.path.pop(0)  # remove parent dir from sys.path
+
+import os
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+import basecamp.tools as bc
+import basecamp.influxDB as db
 
 
 # =======================================================
@@ -91,23 +89,22 @@ def do_scan():
 # =======================================================
 # main loop
 
-# after that, you can use ThMode.ECO or ThMode.COMFORT as values for variables
-
-# .ini
-startup_wait = bc.config.getint('startup', 'wait')
-# also: getfloat, getint, getboolean
-# read the aliases & BT_addresses
-BT_aliases = {}
-for key in bc.config['BT']:
-    BT_aliases[key] = bc.config['BT'][key]
-
-# startup sync & notification
-bc.log.info("--= Restarting =--")
-bc.log.info("sleeping {} seconds for startup sync between services...".format(startup_wait))
-time.sleep(startup_wait)
-bc.notify("WARNING", bc.version+" - (re)started!")
-
-# run baby, run!
-regular_check()
-
-run(host=bc.hostname, port=bc.port, server='gevent')
+if __name__ == "__main__":
+    # initialize config/logs
+    bc.load_config()
+    bc.init_logs()
+    # .ini
+    startup_wait = bc.config.getint('startup', 'wait')
+    # also: getfloat, getint, getboolean
+    # read the aliases & BT_addresses
+    BT_aliases = {}
+    for key in bc.config['BT']:
+        BT_aliases[key] = bc.config['BT'][key]
+    # startup sync & notification
+    bc.log.info("--= Restarting =--")
+    bc.log.info("sleeping {} seconds for startup sync between services...".format(startup_wait))
+    time.sleep(startup_wait)
+    bc.notify("WARNING", bc.service_version+" - (re)started!")
+    # run baby, run!
+    regular_check()
+    run(host=bc.hostname, port=bc.port, server='gevent')

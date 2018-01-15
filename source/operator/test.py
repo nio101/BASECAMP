@@ -17,8 +17,6 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-import basecamp.module1
-import basecamp.module2
-
+import BC_commons
 
 print("hello from test")
