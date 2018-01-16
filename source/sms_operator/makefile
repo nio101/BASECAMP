@@ -24,6 +24,6 @@ deploy: version stop remote_copy start
 	@/bin/echo -e "\x1B[01;93m -= done! =- \x1B[0m"
 
 mydefault: version
-	@/bin/echo -e "\x1B[01;93m -= package basecamp is ready to deploy =- \x1B[0m"
+	# done
 
 .PHONY: test lock update mydefault

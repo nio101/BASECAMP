@@ -1,5 +1,18 @@
 # Evolutions BASECAMP
 
+--=========
+
++ faire des makefile pour tout le monde, pour MAJ & tester facilement...
++ ajouter la MAJ et la copie de basecamp dans les makefile individuels
+
+--=========
+
+modifs logbook & basecamp.tools & sms_operator:
++ mettre une option sans SMS_forwarding dans l'ajout au logbook
++ faire en sorte que le sms_operator ajoute ses erreurs au logbook, mais sans cette option
+mettre cette option sous forme de FLAG dans basecamp.tools, et sms_operator: tools.sms_forwarding = False
++ mettre des starting times dans supervisord qui soient > waiting time des services (avec petite marge de 15 sec?)
+
 --========= notes
 
 To give the individual tests import context, create a tests/context.py file:

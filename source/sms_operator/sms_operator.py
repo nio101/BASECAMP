@@ -88,7 +88,7 @@ except Exception as e:
     print(e.__str__())
     log.error(e)
     log.error("Erreur init GAMMU, sm.Init() failed")
-    # Don't write an ERROR to logbook! would create an infinite loop!
+    # write an error to logbook, but without SMS_forwarding, to prevent a loop!
     exit(1)
 # Reads network information from phone
 netinfo = sm.GetNetworkInfo()

@@ -23,7 +23,7 @@ upgrade_OS:
 	$(foreach host,$(hosts), ssh $(host) "sudo supervisorctl stop all";)
 	$(foreach host,$(hosts), ssh -tt $(host) "sudo apt update && sudo apt upgrade -y";)
 
-restart:
+reboot_all:
 	@/bin/echo -e "\x1B[01;93m -= Restarting each host =- \x1B[0m"
 	@sleep 1
 	$(foreach host,$(hosts), ssh $(host) "sudo shutdown -r now";)
@@ -130,7 +130,7 @@ scp_to_hosts: stop
 deploy: version stop scp_to_hosts scp_supervisord_conf_to_hosts scp_private_ini start
 	@/bin/echo -e "\x1B[01;93m -= done! =- \x1B[0m"
 
-mydefault: version
+mydefault:
 	# ok
 
 .PHONY: upgrade_OS restart stop start scp_private_ini get_private_ini scp_supervisord_conf_to_hosts scp_to_hosts deploy clean
