@@ -23,8 +23,7 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-import basecamp.tools as bc
-import basecamp.influxDB as db
+import basecamp.tools as tools
 
 
 # =======================================================
@@ -43,7 +42,7 @@ def scan_alias(alias):
         result = res.splitlines()[-1].decode('ascii')
         rssi = -75
     except Exception as e:
-        bc.notify("ERROR", "Error trying to scan alias "+alias+": "+e.__str__())
+        tools.notify("ERROR", "Error trying to scan alias "+alias+": "+e.__str__())
         result = "NOT FOUND"
         rssi = -99
     return(result, rssi)
@@ -87,24 +86,24 @@ def do_scan():
 
 
 # =======================================================
-# main loop
+# main loop - load config, init logs, wait and run
 
 if __name__ == "__main__":
     # initialize config/logs
-    bc.load_config()
-    bc.init_logs()
+    tools.load_config()
+    tools.init_logs()
     # .ini
-    startup_wait = bc.config.getint('startup', 'wait')
+    startup_wait = tools.config.getint('startup', 'wait')
     # also: getfloat, getint, getboolean
     # read the aliases & BT_addresses
     BT_aliases = {}
-    for key in bc.config['BT']:
-        BT_aliases[key] = bc.config['BT'][key]
+    for key in tools.config['BT']:
+        BT_aliases[key] = tools.config['BT'][key]
     # startup sync & notification
-    bc.log.info("--= Restarting =--")
-    bc.log.info("sleeping {} seconds for startup sync between services...".format(startup_wait))
+    tools.log.info("--= Restarting =--")
+    tools.log.info("sleeping {} seconds for startup sync between services...".format(startup_wait))
     time.sleep(startup_wait)
-    bc.notify("WARNING", bc.service_version+" - (re)started!")
+    tools.notify("WARNING", tools.service_version+" - (re)started!")
     # run baby, run!
     regular_check()
-    run(host=bc.hostname, port=bc.port, server='gevent')
+    run(host=tools.hostname, port=tools.port, server='gevent')

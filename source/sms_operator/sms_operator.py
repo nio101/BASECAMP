@@ -2,13 +2,11 @@
 # coding: utf-8
 
 """
-Basecamp web_server sample skeleton
+sms_operator
 
 dependencies: GSM modem with SIM card + gammu + python-gammu, logbook
 
 (python3 compatible)
-note:   webserver may not be multi-threaded/non-blocking.
-        if needed, use bottle with gunicorn for example.
 """
 
 
@@ -60,8 +58,7 @@ max_failed_SMS_checks = th_config.getint('main', 'max_failed_SMS_checks')
 log = logging.getLogger(service_name)
 log.setLevel(logging.DEBUG)
 # create file handler
-fh = logging.handlers.RotatingFileHandler(
-              logfile, maxBytes=8000000, backupCount=5)
+fh = logging.handlers.RotatingFileHandler(logfile, maxBytes=8000000, backupCount=5)
 fh.setLevel(logging.DEBUG)
 # create console hangler with higher level
 ch = logging.StreamHandler()
@@ -92,7 +89,7 @@ except Exception as e:
     log.error(e)
     log.error("Erreur init GAMMU, sm.Init() failed")
     # Don't write an ERROR to logbook! would create an infinite loop!
-    exit(0)
+    exit(1)
 # Reads network information from phone
 netinfo = sm.GetNetworkInfo()
 # Print information

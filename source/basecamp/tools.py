@@ -1,7 +1,7 @@
 # tools.py
 
 """
-basecamp.init
+basecamp.tools
 
 groups all the things common to the various scripts related initialization
 

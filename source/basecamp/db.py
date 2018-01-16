@@ -1,7 +1,7 @@
-# influxDB.py
+# db.py
 
 """
-BC_commons - influxDB sub_module
+basecamp.db
 
 handles all the read/write stuff with influxDB
 
@@ -9,8 +9,6 @@ handles all the read/write stuff with influxDB
 - published under GNU GENERAL PUBLIC LICENSE (see LICENCE file)
 """
 
-
-# from . import tools as bc
 import basecamp.tools as bc
 from influxdb import InfluxDBClient
 import datetime

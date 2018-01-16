@@ -7,7 +7,7 @@ print(os.getcwd())
 # print(os.getcwd())
 
 # import basecamp.tools as bc
-import basecamp.influxDB as db
+import basecamp.db as db
 
 
 # content of test_sample.py
