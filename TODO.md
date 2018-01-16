@@ -13,6 +13,18 @@ modifs logbook & basecamp.tools & sms_operator:
 mettre cette option sous forme de FLAG dans basecamp.tools, et sms_operator: tools.sms_forwarding = False
 + mettre des starting times dans supervisord qui soient > waiting time des services (avec petite marge de 15 sec?)
 
+---
+ex. de tests unitaires avec boddle:
+
+`̀``python
+from server import do_add, do_sub
+from boddle import boddle
+
+def test_add():
+    with boddle(method='GET', path='/add', params={'a': 1, 'b': 2}):            assert do_add() == '3', "erreur test unitaire sur /add"
+`̀``
+
+
 --========= notes
 
 To give the individual tests import context, create a tests/context.py file:
