@@ -1,7 +1,7 @@
 # Evolutions BASECAMP
 
 --=========
-
+go go
 + faire des makefile pour tout le monde, pour MAJ & tester facilement...
 + ajouter la MAJ et la copie de basecamp dans les makefile individuels
 
