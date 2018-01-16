@@ -18,25 +18,41 @@ import socket
 import requests
 import logging
 import logging.handlers
-# import datetime
+
+
+# =======================================================
+# basecamp.tools' variables usable from services
+
+service_name, machine_name = (None,)*2
+basecamp_version, service_version = (None,)*2
+config = None
+logbook_url, logbook_timeout = (None,)*2
+hostname, port = (None,)*2
+alive_url, alive_frequency, alive_timeout = (None,)*3
+log = None
 
 
 # =======================================================
 # Functions
 
-def send_to_logbook(log_type, msg):
+def send_to_logbook(log_type, msg, sms_forwarding=True):
     """
     write to remote logbook (pushover may be sent for "INFO", SMS for "ERROR" or "ALARM")
     """
     try:
-        requests.get(logbook_url, params={'log_type': log_type, 'machine': machine_name, 'service': service_name, 'message': msg},
+        if sms_forwarding:
+            sms_option = 1
+        else:
+            sms_option = 0
+        requests.get(logbook_url, params={'log_type': log_type, 'machine': machine_name, 'service': service_name, 'message': msg, 'sms_forwarding': sms_option},
                      timeout=logbook_timeout)
     except Exception as e:
         log.error(e.__str__())
         log.error("*** ERROR reaching logbook on "+str(logbook_url)+" ***")
+    return
 
 
-def notify(type, msg):
+def notify(type, msg, sms_forwarding=True):
     """
     log & write to logbook, depending on the notification level
     """
@@ -46,10 +62,11 @@ def notify(type, msg):
         log.info(msg)
     elif type == "WARNING":
         log.warning(msg)
-        send_to_logbook(type, msg)
+        send_to_logbook(type, msg, sms_forwarding)
     elif type == "ERROR":
         log.error(msg)
-        send_to_logbook(type, msg)
+        send_to_logbook(type, msg, sms_forwarding)
+    return
 
 
 def slang(td):
@@ -59,27 +76,28 @@ def slang(td):
     """
     if td.total_seconds() < 60:
         if int(td.total_seconds()) == 1:
-            return("1 second ago")
+            slang_string = "1 second ago"
         else:
-            return("{} seconds ago".format(int(td.total_seconds())))
+            slang_string = "{} seconds ago".format(int(td.total_seconds()))
     elif td.total_seconds() < 3600:
         minutes = int(td.total_seconds() / 60)
         if minutes == 1:
-            return("1 minute ago")
+            slang_string = "1 minute ago"
         else:
-            return("{} minutes ago".format(minutes))
+            slang_string = "{} minutes ago".format(minutes)
     elif td.total_seconds() < 24*3600:
         hours = int(td.total_seconds() / 3600)
         if hours == 1:
-            return("1 hour ago")
+            slang_string = "1 hour ago"
         else:
-            return("{} hours ago".format(hours))
+            slang_string = "{} hours ago".format(hours)
     else:
         days = int(td.total_seconds() / 24*3600)
         if days == 1:
-            return("1 day ago")
+            slang_string = "1 day ago"
         else:
-            return("{} days ago".format(days))
+            slang_string = "{} days ago".format(days)
+    return slang_string
 
 
 # =======================================================
@@ -93,8 +111,6 @@ def load_config():
     global hostname, port
     global alive_url, alive_frequency, alive_timeout
 
-    print(os.getcwd())
-    print(sys.argv[0])
     try:
         service_name = re.search("([^\/]*)\.py", sys.argv[0]).group(1)
     except:
@@ -102,7 +118,6 @@ def load_config():
             service_name = re.search("([^\/]*)$", sys.argv[0]).group(0)
         except:
             service_name = "(unknown)"
-    print("service_name:"+service_name)
     machine_name = socket.gethostname()
 
     # basecamp package version
@@ -110,7 +125,7 @@ def load_config():
         version = version_file.read()
     basecamp_version = version.rstrip("\n\r")
 
-    # service version
+    # service's own version
     with open('_version_.txt', 'r') as version_file:
         version = version_file.read()
     service_version = version.rstrip("\n\r")
@@ -118,7 +133,7 @@ def load_config():
     # .ini
     config = configparser.ConfigParser()
     config.optionxform = str
-    # read default config file in commons dir
+    # read default config file in basecamp package dir
     config.read_file(open("../basecamp/base_config.ini"))
     # read optional config file in local service dir
     config.read("./config.ini")
@@ -130,6 +145,7 @@ def load_config():
     alive_frequency = config.getint('alive_check', 'frequency')
     alive_timeout = config.getint('alive_check', 'http_timeout')
     # also: getfloat, getint, getboolean
+    return
 
 
 def init_logs():
@@ -150,5 +166,5 @@ def init_logs():
     # add the handlers to the logger
     log.addHandler(fh)
     log.addHandler(ch)
-
     print("*** basecamp.init ["+basecamp_version+"]: base config file loaded, version and logs initialized! ***")
+    return

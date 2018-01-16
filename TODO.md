@@ -7,6 +7,36 @@ go go
 
 --=========
 
+the way Python handles modules and namespaces gives the developer a natural way to ensure the encapsulation and separation of abstraction layers, both being the most common reasons to use object-orientation. Therefore, Python programmers have more latitude to not use object-orientation, when it is not required by the business model.
+
+--=========
+
+Carefully isolating functions with context and side-effects from functions with logic (called pure functions) allow the following benefits:
+
+    Pure functions are deterministic: given a fixed input, the output will always be the same.
+    Pure functions are much easier to change or replace if they need to be refactored or optimized.
+    Pure functions are easier to test with unit-tests: There is less need for complex context setup and data cleaning afterwards.
+    Pure functions are easier to manipulate, decorate, and pass around.
+
+--=========
+
+The generator approach using Python’s own contextlib:
+
+from contextlib import contextmanager
+
+@contextmanager
+def custom_open(filename):
+    f = open(filename)
+    try:
+        yield f
+    finally:
+        f.close()
+
+with custom_open('file') as f:
+    contents = f.read()
+
+--=========
+
 modifs logbook & basecamp.tools & sms_operator:
 + mettre une option sans SMS_forwarding dans l'ajout au logbook
 + faire en sorte que le sms_operator ajoute ses erreurs au logbook, mais sans cette option
