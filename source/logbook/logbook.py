@@ -45,9 +45,10 @@ def alive_check():
         requests.get(tools.alive_url, params={'service': tools.service_name, 'version': tools.service_version},
                      timeout=tools.alive_timeout)
     except Exception as e:
-        tools.log.error(e.__str__())
-        tools.log.error("*** ERROR reaching alive_url on "+str(tools.alive_url)+" ***")
+        # tools.log.error(e.__str__())
+        # tools.log.error("*** ERROR reaching alive_url on "+str(tools.alive_url)+" ***")
         # tools.notify("ERROR", "*** ERROR reaching alive_url on "+str(tools.alive_url)+" ***")
+        pass
     return
 
 
