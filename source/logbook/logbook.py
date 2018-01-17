@@ -7,74 +7,18 @@ Basecamp logbook service
 dependencies: pushover, SMS, influxdb
 
 (python3 compatible)
-note:   webserver may not be multi-threaded/non-blocking.
-        if needed, use bottle with gunicorn for example.
 """
 
+from gevent import monkey; monkey.patch_all()
 from bottle import run, request, get
-import logging
-import logging.handlers
-import configparser
-import socket
-from influxdb import InfluxDBClient
 import datetime
 import requests
 
-
-# =======================================================
-# init
-# service_name = re.search("([^\/]*)\.py", sys.argv[0]).group(1)
-service_name = "logbook"
-machine_name = socket.gethostname()
-
-# .ini
-th_config = configparser.ConfigParser()
-th_config.read(service_name+".ini")
-logfile = th_config.get('main', 'logfile')
-hostname = th_config.get('main', 'hostname')
-port = th_config.getint('main', 'port')
-pushover_url = th_config.get('main', 'pushover_url')
-sms_url = th_config.get('main', 'sms_url')
-admin_msisdn = th_config.get('main', 'admin_msisdn')
-pushover_timeout = th_config.getint('main', 'pushover_timeout')
-sms_timeout = th_config.getint('main', 'sms_timeout')
-influxdb_host = th_config.get("influxdb", "influxdb_host")
-influxdb_port = th_config.get("influxdb", "influxdb_port")
-# also: getfloat, getint, getboolean
-
-# log
-log = logging.getLogger(service_name)
-log.setLevel(logging.DEBUG)
-# create file handler
-fh = logging.handlers.TimedRotatingFileHandler(logfile, when='midnight', backupCount=7)
-fh.setLevel(logging.DEBUG)
-# create console hangler with higher level
-ch = logging.StreamHandler()
-ch.setLevel(logging.INFO)
-# create formatter and add it to the handlers
-# formatter = logging.Formatter('%(asctime)s - [%(name)s] %(levelname)s: %(message)s')
-formatter = logging.Formatter('%(asctime)s - %(message)s')
-fh.setFormatter(formatter)
-ch.setFormatter(formatter)
-# add the handlers to the logger
-log.addHandler(fh)
-log.addHandler(ch)
-
-# influxdb init
-client = InfluxDBClient(influxdb_host, influxdb_port)
-client.switch_database('basecamp')
-log.info("influxdb will be contacted on "+str(influxdb_host)+":"+str(influxdb_port))
-influx_json_body = [
-    {
-        "measurement": "logs",
-        "tags": {},
-        "time": "",
-        "fields": {}
-    }
-]
-
-# add its own restart info
-log.info("WARNING [%s] [%s] : redémarrage" % (machine_name, service_name))
+import os
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import basecamp.tools as tools
+import basecamp.db as db
 
 
 # =======================================================
@@ -84,18 +28,12 @@ def add_to_influxdb(log_type, machine, service, message):
     influx_json_body[0]['time'] = datetime.datetime.utcnow().isoformat()
     influx_json_body[0]['fields'] = {'details': message}
     influx_json_body[0]['tags'] = {'type': log_type, 'service': service, 'machine': machine}
-    # log.info("writing to influxdb: "+str(influx_json_body))
-    try:
-        client.write_points(influx_json_body)
-    except Exception as e:
-        print(e.__str__())
-        log.error(e)
-        log.error("ERROR reaching infludb on "+str(influxdb_host)+":"+str(influxdb_port))
-        # requests.get(sms_url, params={'msisdn': admin_msisdn, 'text': "ERREUR! impossible d'accéder à influxdb!"}, timeout=sms_timeout)
+    if not db.client.write_points(influx_json_body):
+        tools.log.error("ERROR trying to write points to influxDB with JSON_body={}".format(influx_json_body))
         try:
-            requests.get(pushover_url, params={'text': "ERREUR! impossible d'accéder à influxdb!"}, timeout=pushover_timeout)
+            requests.get(pushover_url, params={'text': "ERROR: cannot write points to influxDB"}, timeout=pushover_timeout)
         except:
-            log.error("ERROR trying to reach pushover at:"+pushover_url)
+            tools.log.error("ERROR trying to reach pushover at:"+pushover_url)
 
 
 # =======================================================
@@ -120,18 +58,18 @@ def do_add():
     message = request.query.message
     if message == "":
         return "ERROR: message field should NOT be None"
-    log.info("%s [%s] [%s] : %s" % (log_type, machine, service, message))
+    tools.log.info("%s [%s] [%s] : %s" % (log_type, machine, service, message))
     if (log_type != "DEBUG"):
-        add_to_influxdb(log_type, machine, service, message)        
+        add_to_influxdb(log_type, machine, service, message)
         try:
             requests.get(pushover_url, params={'text': "%s [%s] [%s] : %s" % (log_type, machine, service, message)}, timeout=pushover_timeout)
         except:
-            log.error("ERROR trying to reach pushover at:"+pushover_url)
+            tools.log.error("ERROR trying to reach pushover at:"+pushover_url)
         if (log_type == "ALARM"):
             try:
                 requests.get(sms_url, params={'msisdn': admin_msisdn, 'text': "%s [%s] [%s] : %s" % (log_type, machine, service, message)}, timeout=sms_timeout)
             except:
-                log.error("ERROR trying to reach SMS_operator at:"+sms_url)
+                tools.log.error("ERROR trying to reach SMS_operator at:"+sms_url)
     return "OK"
 
 
@@ -145,7 +83,7 @@ def do_get():
     <meta http-equiv=\"expires\" content=\"Tue, 01 Jan 1980 1:00:00 GMT\" />\
     <meta http-equiv=\"pragma\" content=\"no-cache\" />"
     res += "<html><h2>Basecamp Logbook:</h2><pre>"
-    for line in reversed(open(logfile).readlines()):
+    for line in reversed(open(tools.logfile).readlines()):
         res += line
     res += "</pre></html>"
     return res
@@ -154,4 +92,22 @@ def do_get():
 # =======================================================
 # main loop
 
-run(host=hostname, port=port, server='gunicorn', workers=2)
+if __name__ == "__main__":
+    # initialize config/logs
+    tools.load_config(optional_service_name="logbook")
+    # .ini
+    startup_wait = tools.config.getint('startup', 'wait')
+    hostname = tools.config.get('main', 'hostname')
+    port = tools.config.getint('main', 'port')
+    pushover_url = tools.config.get('main', 'pushover_url')
+    sms_url = tools.config.get('main', 'sms_url')
+    admin_msisdn = tools.config.get('main', 'admin_msisdn')
+    pushover_timeout = tools.config.getint('main', 'pushover_timeout')
+    sms_timeout = tools.config.getint('main', 'sms_timeout')
+    # also: getfloat, getint, getboolean
+    tools.init_logs(_formatter='%(asctime)s - %(message)s')
+    influx_json_body = db.init()
+    # no startup sync for logbook
+    tools.log.info("WARNING [%s] [%s] : %s - (re)started!" % (tools.machine_name, tools.service_name, tools.service_version))
+    # run baby, run!
+    run(host=hostname, port=port, server='gevent')

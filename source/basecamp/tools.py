@@ -3,7 +3,11 @@
 """
 basecamp.tools
 
-groups all the things common to the various scripts related initialization
+abstracts various stuff for services:
+- config file loading (base config + local config)
+- log(s) initialization
+- logbook sending
+- and various commonly used functions (slang,...)
 
 - for python3
 - published under GNU GENERAL PUBLIC LICENSE (see LICENCE file)
@@ -12,7 +16,6 @@ groups all the things common to the various scripts related initialization
 
 import configparser
 import re
-import os
 import sys
 import socket
 import requests
@@ -21,7 +24,7 @@ import logging.handlers
 
 
 # =======================================================
-# basecamp.tools' variables usable from services
+# basecamp.tools' variables shared with client services
 
 service_name, machine_name = (None,)*2
 basecamp_version, service_version = (None,)*2
@@ -29,7 +32,7 @@ config = None
 logbook_url, logbook_timeout = (None,)*2
 hostname, port = (None,)*2
 alive_url, alive_frequency, alive_timeout = (None,)*3
-log = None
+log, logfile = (None,)*2
 
 
 # =======================================================
@@ -103,7 +106,7 @@ def slang(td):
 # =======================================================
 # Init
 
-def load_config():
+def load_config(optional_service_name=None):
     global service_name, machine_name
     global basecamp_version, service_version
     global config
@@ -111,13 +114,16 @@ def load_config():
     global hostname, port
     global alive_url, alive_frequency, alive_timeout
 
-    try:
-        service_name = re.search("([^\/]*)\.py", sys.argv[0]).group(1)
-    except:
+    if optional_service_name is None:
         try:
-            service_name = re.search("([^\/]*)$", sys.argv[0]).group(0)
+            service_name = re.search("([^\/]*)\.py", sys.argv[0]).group(1)
         except:
-            service_name = "(unknown)"
+            try:
+                service_name = re.search("([^\/]*)$", sys.argv[0]).group(0)
+            except:
+                service_name = "(unknown)"
+    else:
+        service_name = optional_service_name
     machine_name = socket.gethostname()
 
     # basecamp package version
@@ -148,19 +154,26 @@ def load_config():
     return
 
 
-def init_logs():
+def init_logs(_logfile_name=None, _formatter=None):
     global log
+    global logfile
+    if _logfile_name is None:
+        logfile = service_name+".log"
+    else:
+        logfile = _logfile_name
+    if _formatter is None:
+        _formatter = '%(asctime)s - [%(name)s] %(levelname)s: %(message)s'
     # .log
     log = logging.getLogger(service_name)
     log.setLevel(logging.DEBUG)
     # create file handler
-    fh = logging.handlers.RotatingFileHandler(service_name+".log", maxBytes=8000000, backupCount=5)
+    fh = logging.handlers.RotatingFileHandler(_logfile_name, when='midnight', backupCount=7)
     fh.setLevel(logging.DEBUG)
     # create console hangler with higher level
     ch = logging.StreamHandler()
     ch.setLevel(logging.INFO)
     # create formatter and add it to the handlers
-    formatter = logging.Formatter('%(asctime)s - [%(name)s] %(levelname)s: %(message)s')
+    formatter = logging.Formatter(_formatter)
     fh.setFormatter(formatter)
     ch.setFormatter(formatter)
     # add the handlers to the logger
