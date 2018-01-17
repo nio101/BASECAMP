@@ -5,6 +5,7 @@ version:
 	cd ..;./update_version.sh
 	cp ../_version_.txt ./
 	@cat _version_.txt
+	cd ../basecamp;make version
 
 test:
 	# unit_tests
