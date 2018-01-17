@@ -1,14 +1,17 @@
 # Evolutions BASECAMP
 
+TODO0:
+mettre les noms de service et de host dans des variables make!
+
 --=========
-go go
+TODO1:
 + migration vers usage du package basecamp!
++ alive_check vers nightwatch!
 + faire des makefile pour tout le monde, pour MAJ & tester facilement...
 + ajouter la MAJ et la copie de basecamp dans les makefile individuels
 
-=> OK pour:
+done pour:
 * logbook!
-
 
 --=========
 

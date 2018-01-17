@@ -13,6 +13,7 @@ from gevent import monkey; monkey.patch_all()
 from bottle import run, request, get
 import datetime
 import requests
+from threading import Timer
 
 import os
 import sys
@@ -36,12 +37,26 @@ def add_to_influxdb(log_type, machine, service, message):
             tools.log.error("ERROR trying to reach pushover at:"+pushover_url)
 
 
+def alive_check():
+    tools.log.info("*** performing alive check() ***")
+    t = Timer(tools.alive_frequency, alive_check)
+    t.start()
+    try:
+        requests.get(tools.alive_url, params={'service': tools.service_name, 'version': tools.service_version},
+                     timeout=tools.alive_timeout)
+    except Exception as e:
+        tools.log.error(e.__str__())
+        tools.log.error("*** ERROR reaching alive_url on "+str(tools.alive_url)+" ***")
+        # tools.notify("ERROR", "*** ERROR reaching alive_url on "+str(tools.alive_url)+" ***")
+    return
+
+
 # =======================================================
 # URL handlers
 
 @get('/alive')
 def do_alive():
-    return "OK"
+    return(tools.service_version)
 
 
 @get('/add_to_logbook')
@@ -97,17 +112,18 @@ if __name__ == "__main__":
     tools.load_config(optional_service_name="logbook")
     # .ini
     # startup_wait = tools.config.getint('startup', 'wait')
-    hostname = tools.config.get('main', 'hostname')
-    port = tools.config.getint('main', 'port')
-    pushover_url = tools.config.get('main', 'pushover_url')
-    sms_url = tools.config.get('main', 'sms_url')
-    admin_msisdn = tools.config.get('main', 'admin_msisdn')
-    pushover_timeout = tools.config.getint('main', 'pushover_timeout')
-    sms_timeout = tools.config.getint('main', 'sms_timeout')
+    # hostname = tools.config.get('main', 'hostname')
+    # port = tools.config.getint('main', 'port')
+    pushover_url = tools.config.get('pushover', 'pushover_url')
+    pushover_timeout = tools.config.getint('pushover', 'pushover_timeout')
+    sms_url = tools.config.get('sms', 'sms_url')
+    admin_msisdn = tools.config.get('sms', 'admin_msisdn')
+    sms_timeout = tools.config.getint('sms', 'sms_timeout')
     # also: getfloat, getint, getboolean
     tools.init_logs(formatter='%(asctime)s - %(message)s')
     influx_json_body = db.init()
     # no startup sync for logbook
     tools.log.info("WARNING [%s] [%s] : %s - (re)started!" % (tools.machine_name, tools.service_name, tools.service_version))
     # run baby, run!
-    run(host=hostname, port=port, server='gevent')
+    alive_check()
+    run(host=tools.hostname, port=tools.port, server='gevent')

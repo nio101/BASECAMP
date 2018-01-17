@@ -17,17 +17,14 @@ from gevent import monkey; monkey.patch_all()
 import time
 import requests
 from bottle import run, request, get
-import sys
 from subprocess import check_output
 from threading import Timer
-# BC_commons import
-from inspect import getsourcefile
-import os.path
-current_dir = os.path.dirname(os.path.abspath(getsourcefile(lambda: 0)))
-sys.path.insert(0, current_dir[:current_dir.rfind(os.path.sep)])
-import BC_commons as bc
-# from BC_commons import influxDB
-sys.path.pop(0)  # remove parent dir from sys.path
+
+import os
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import basecamp.tools as tools
+import basecamp.db as db
 
 
 # =======================================================
@@ -38,16 +35,16 @@ class PreMode:   # reflects the current presence mode
 
 
 def alive_check():
-    bc.log.info("*** performing alive check() ***")
-    t = Timer(bc.alive_frequency, alive_check)
+    tools.log.info("*** performing alive check() ***")
+    t = Timer(tools.alive_frequency, alive_check)
     t.start()
     try:
-        requests.get(bc.alive_url, params={'service': bc.service_name, 'version': bc.version},
-                     timeout=bc.alive_timeout)
+        requests.get(tools.alive_url, params={'service': tools.service_name, 'version': tools.service_version},
+                     timeout=tools.alive_timeout)
     except Exception as e:
-        bc.log.error(e.__str__())
-        bc.log.error("*** ERROR reaching alive_url on "+str(bc.alive_url)+" ***")
-        bc.notify("ERROR", "*** ERROR reaching alive_url on "+str(bc.alive_url)+" ***")
+        tools.log.error(e.__str__())
+        tools.log.error("*** ERROR reaching alive_url on "+str(tools.alive_url)+" ***")
+        tools.notify("ERROR", "*** ERROR reaching alive_url on "+str(tools.alive_url)+" ***")
     return
 
 
@@ -56,7 +53,7 @@ def alive_check():
 
 @get('/alive')
 def do_alive():
-    return(bc.version)
+    return(tools.service_version)
 
 
 @get('/PIR_event')
@@ -78,21 +75,18 @@ def do_PIR_event():
 # =======================================================
 # main loop
 
-# local .ini
-startup_wait = bc.config.getint('startup', 'wait')
-# also: getfloat, getint, getboolean
-# read the aliases & BT_addresses
-BT_aliases = {}
-for key in bc.config['BT']:
-    BT_aliases[key] = bc.config['BT'][key]
-
-# startup sync & notification
-bc.log.info("--= Restarting =--")
-bc.log.info("sleeping {} seconds for startup sync between services...".format(startup_wait))
-time.sleep(startup_wait)
-bc.notify("WARNING", bc.service_name+" "+bc.version+" (re)started on machine "+bc.machine_name)
-
-# run baby, run!
-alive_check()
-
-run(host=bc.hostname, port=bc.port, server='gevent')
+if __name__ == "__main__":
+    # initialize config/logs
+    tools.load_config(optional_service_name="operator")
+    # .ini
+    startup_wait = tools.config.getint('startup', 'wait')
+    # also: getfloat, getint, getboolean
+    tools.init_logs()
+    influx_json_body = db.init()
+    # startup sync & notification
+    tools.log.info("--= Restarting =--")
+    tools.log.info("sleeping {} seconds for startup sync between services...".format(startup_wait))
+    time.sleep(startup_wait)
+    tools.notify("WARNING", tools.service_version+" - (re)started!")
+    alive_check()
+    run(host=tools.hostname, port=tools.port, server='gevent')
