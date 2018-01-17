@@ -22,7 +22,10 @@ start:
 remote_copy:
 	@/bin/echo -e "\x1B[01;93m -= copying to remote machine =- \x1B[0m"
 	ssh bc-watch "sudo rm -rf ~/logbook"
+	ssh bc-watch "sudo rm -rf ~/basecamp"
 	cd ..; scp -r logbook bc-watch:~/
+	cd ..; scp -r basecamp bc-watch:~/
+	cd ../..; scp _my_private_ini_files_/logbook.ini bc-watch:~/logbook
 
 deploy: version stop remote_copy start
 	@/bin/echo -e "\x1B[01;93m -= done! =- \x1B[0m"

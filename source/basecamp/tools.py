@@ -32,7 +32,7 @@ config = None
 logbook_url, logbook_timeout = (None,)*2
 hostname, port = (None,)*2
 alive_url, alive_frequency, alive_timeout = (None,)*3
-log, logfile = (None,)*2
+log, logfile_name = (None,)*2
 
 
 # =======================================================
@@ -142,7 +142,7 @@ def load_config(optional_service_name=None):
     # read default config file in basecamp package dir
     config.read_file(open("../basecamp/base_config.ini"))
     # read optional config file in local service dir
-    config.read("./config.ini")
+    config.read("./"+service_name+".ini")
     logbook_url = config.get('logbook', 'logbook_url')
     logbook_timeout = config.getint('logbook', 'logbook_timeout')
     hostname = config.get('web_server', 'hostname')
@@ -154,26 +154,26 @@ def load_config(optional_service_name=None):
     return
 
 
-def init_logs(_logfile_name=None, _formatter=None):
+def init_logs(filename=None, formatter=None):
     global log
-    global logfile
-    if _logfile_name is None:
-        logfile = service_name+".log"
+    global logfile_name
+    if filename is None:
+        logfile_name = service_name+".log"
     else:
-        logfile = _logfile_name
-    if _formatter is None:
-        _formatter = '%(asctime)s - [%(name)s] %(levelname)s: %(message)s'
+        logfile_name = filename
+    if formatter is None:
+        formatter = '%(asctime)s - [%(name)s] %(levelname)s: %(message)s'
     # .log
     log = logging.getLogger(service_name)
     log.setLevel(logging.DEBUG)
     # create file handler
-    fh = logging.handlers.RotatingFileHandler(_logfile_name, when='midnight', backupCount=7)
+    fh = logging.handlers.TimedRotatingFileHandler(logfile_name, when='midnight', backupCount=7)
     fh.setLevel(logging.DEBUG)
     # create console hangler with higher level
     ch = logging.StreamHandler()
     ch.setLevel(logging.INFO)
     # create formatter and add it to the handlers
-    formatter = logging.Formatter(_formatter)
+    formatter = logging.Formatter(formatter)
     fh.setFormatter(formatter)
     ch.setFormatter(formatter)
     # add the handlers to the logger

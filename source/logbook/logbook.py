@@ -83,7 +83,7 @@ def do_get():
     <meta http-equiv=\"expires\" content=\"Tue, 01 Jan 1980 1:00:00 GMT\" />\
     <meta http-equiv=\"pragma\" content=\"no-cache\" />"
     res += "<html><h2>Basecamp Logbook:</h2><pre>"
-    for line in reversed(open(tools.logfile).readlines()):
+    for line in reversed(open(tools.logfile_name).readlines()):
         res += line
     res += "</pre></html>"
     return res
@@ -96,7 +96,7 @@ if __name__ == "__main__":
     # initialize config/logs
     tools.load_config(optional_service_name="logbook")
     # .ini
-    startup_wait = tools.config.getint('startup', 'wait')
+    # startup_wait = tools.config.getint('startup', 'wait')
     hostname = tools.config.get('main', 'hostname')
     port = tools.config.getint('main', 'port')
     pushover_url = tools.config.get('main', 'pushover_url')
@@ -105,7 +105,7 @@ if __name__ == "__main__":
     pushover_timeout = tools.config.getint('main', 'pushover_timeout')
     sms_timeout = tools.config.getint('main', 'sms_timeout')
     # also: getfloat, getint, getboolean
-    tools.init_logs(_formatter='%(asctime)s - %(message)s')
+    tools.init_logs(formatter='%(asctime)s - %(message)s')
     influx_json_body = db.init()
     # no startup sync for logbook
     tools.log.info("WARNING [%s] [%s] : %s - (re)started!" % (tools.machine_name, tools.service_name, tools.service_version))

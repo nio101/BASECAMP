@@ -2,8 +2,13 @@
 
 --=========
 go go
++ migration vers usage du package basecamp!
 + faire des makefile pour tout le monde, pour MAJ & tester facilement...
 + ajouter la MAJ et la copie de basecamp dans les makefile individuels
+
+=> OK pour:
+* logbook!
+
 
 --=========
 
@@ -46,13 +51,13 @@ mettre cette option sous forme de FLAG dans basecamp.tools, et sms_operator: too
 ---
 ex. de tests unitaires avec boddle:
 
-`̀``python
+```python
 from server import do_add, do_sub
 from boddle import boddle
 
 def test_add():
     with boddle(method='GET', path='/add', params={'a': 1, 'b': 2}):            assert do_add() == '3', "erreur test unitaire sur /add"
-`̀``
+```
 
 
 --========= notes
