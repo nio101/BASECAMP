@@ -35,7 +35,7 @@ class PreMode:   # reflects the current presence mode
 
 
 def alive_check():
-    tools.log.info("*** performing alive check() ***")
+    # tools.log.info("*** performing alive check() ***")
     t = Timer(tools.alive_frequency, alive_check)
     t.start()
     try:

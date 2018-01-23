@@ -1,5 +1,11 @@
 # Evolutions BASECAMP
 
+===========
+
+nightwatch:
+- check batteries modules Muta >= 2.3V, sinon mesures pas fiables (luminosité par ex.)
+- check age des mesures Muta => relancer operator + alerte
+
 TODO0:
 mettre les noms de service et de host dans des variables make!
 

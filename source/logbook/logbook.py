@@ -38,7 +38,7 @@ def add_to_influxdb(log_type, machine, service, message):
 
 
 def alive_check():
-    tools.log.info("*** performing alive check() ***")
+    # tools.log.info("*** performing alive check() ***")
     t = Timer(tools.alive_frequency, alive_check)
     t.start()
     try:
