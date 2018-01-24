@@ -65,7 +65,7 @@ def job(h, m):
     else:
         m_announce = one_of(announcements_time_week)
     if (m == "00"):
-        m_time = h
+        m_time = h+"h"
     else:
         m_time = h+"h"+m
     requests.get(interphone_url, params={'service': tools.service_name, 'announce': m_announce.format(m_time)}, timeout=interphone_timeout)
