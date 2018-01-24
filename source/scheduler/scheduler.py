@@ -1,5 +1,5 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python3
+# coding: utf-8
 
 """
 scheduler service
@@ -21,16 +21,15 @@ TODO:
 import requests
 import time
 import schedule
-import sys
+import datetime
+from random import randint
 # BC_commons import
-from inspect import getsourcefile
 from threading import Timer
-import os.path
-current_dir = os.path.dirname(os.path.abspath(getsourcefile(lambda: 0)))
-sys.path.insert(0, current_dir[:current_dir.rfind(os.path.sep)])
-import BC_commons as bc
-# from BC_commons import influxDB
-sys.path.pop(0)  # remove parent dir from sys.path
+import os
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+import basecamp.tools as tools
 
 
 # =======================================================
@@ -39,70 +38,84 @@ sys.path.pop(0)  # remove parent dir from sys.path
 # =======================================================
 
 def alive_check():
-    bc.log.info("*** performing alive check() ***")
-    t = Timer(bc.alive_frequency, alive_check)
+    # tools.log.info("*** performing alive check() ***")
+    t = Timer(tools.alive_frequency, alive_check)
     t.start()
     try:
-        requests.get(bc.alive_url, params={'service': bc.service_name, 'version': bc.version},
-                     timeout=bc.alive_timeout)
+        requests.get(tools.alive_url, params={'service': tools.service_name, 'version': tools.service_version},
+                     timeout=tools.alive_timeout)
     except Exception as e:
-        bc.log.error(e.__str__())
-        bc.log.error("*** ERROR reaching alive_url on "+str(bc.alive_url)+" ***")
-        bc.notify("ERROR", "*** ERROR reaching alive_url on "+str(bc.alive_url)+" ***")
+        tools.log.error(e.__str__())
+        tools.log.error("*** ERROR reaching alive_url on "+str(tools.alive_url)+" ***")
+        tools.notify("ERROR", "*** ERROR reaching alive_url on "+str(tools.alive_url)+" ***")
     return
+
+
+def one_of(m_list):
+    return m_list[randint(0, len(m_list)-1)]
 
 
 # =======================================================
 # time announce job
 
 def job(h, m):
-    # ajouter des conditions:
-    if (m == "00"):
-        announce = "Yo! Prends ton temps, man, c'est le week-end, et il n'est que "+h+"h!"
+    # choose an announcement
+    if (datetime.datetime.today().weekday() >= 5):  # weekend
+        m_announce = one_of(announcements_time_weekend)
     else:
-        announce = "Yo! Prends ton temps, man, c'est le week-end, et il n'est que  "+h+"h"+m+"!"
-    requests.get(interphone_url, params={'service': bc.service_name, 'announce': announce}, timeout=interphone_timeout)
+        m_announce = one_of(announcements_time_week)
+    if (m == "00"):
+        m_time = h
+    else:
+        m_time = h+"h"+m
+    requests.get(interphone_url, params={'service': tools.service_name, 'announce': m_announce.format(m_time)}, timeout=interphone_timeout)
 
 
 # =======================================================
 # main stuff
 
-# local .ini
-startup_wait = bc.config.getint('startup', 'wait')
-# also: getfloat, getint, getboolean
-interphone_url = bc.config.get('interphone', 'interphone_url')
-interphone_timeout = bc.config.getint('interphone', 'interphone_timeout')
+if __name__ == "__main__":
+    # initialize config/logs
+    tools.load_config()
+    tools.init_logs()
+    # .ini
+    startup_wait = tools.config.getint('startup', 'wait')
+    startup_wait = tools.config.getint('startup', 'wait')
+    # also: getfloat, getint, getboolean
+    interphone_url = tools.config.get('interphone', 'interphone_url')
+    interphone_timeout = tools.config.getint('interphone', 'interphone_timeout')
+    hello_world = eval(tools.config.get('announcements', 'hello_world'))
+    announcements_time_week = eval(tools.config.get('announcements', 'announcements_time_week'))
+    announcements_time_weekend = eval(tools.config.get('announcements', 'announcements_time_weekend'))
 
-# startup sync & notification
-bc.log.info("--= Restarting =--")
-bc.log.info("sleeping {} seconds for startup sync between services...".format(startup_wait))
-time.sleep(startup_wait)
-bc.notify("WARNING", bc.service_name+" "+bc.version+" (re)started on machine "+bc.machine_name)
+    # startup sync & notification
+    tools.log.info("--= Restarting =--")
+    tools.log.info("sleeping {} seconds for startup sync between services...".format(startup_wait))
+    time.sleep(startup_wait)
+    tools.notify("WARNING", tools.service_version+" - (re)started!")
+    requests.get(interphone_url, params={'service': tools.service_name, 'announce': one_of(hello_world)}, timeout=interphone_timeout)
+    # run baby, run!
+    alive_check()
+    # scheduler init
+    hours = []
+    # announce only between 7h00-22h30
+    for hour in range(7, 23):
+        hours.append('{0:01d}'.format(hour))
+    # hour_marks = ["00", "15", "30", "45"]
+    hour_marks = ["00", "30"]
+    for hour in hours:
+        for mn in hour_marks:
+            schedule.every().day.at(hour+":"+mn).do(job, hour, mn)
+    """
+    schedule.every(10).seconds.do(job)
+    schedule.every().hour.do(job)
+    schedule.every().day.at("10:30").do(job)
+    schedule.every().monday.do(job)
+    schedule.every().wednesday.at("13:15").do(job)
+    """
+    # time.sleep(10)
+    # schedule.run_all(delay_seconds=2)
 
-# run baby, run!
-alive_check()
-
-# scheduler init
-
-hours = []
-# announce only between 7h00-22h30
-for hour in range(7, 23):
-    hours.append('{0:01d}'.format(hour))
-# hour_marks = ["00", "15", "30", "45"]
-hour_marks = ["00", "30"]
-for hour in hours:
-    for mn in hour_marks:
-        schedule.every().day.at(hour+":"+mn).do(job, hour, mn)
-"""
-schedule.every(10).seconds.do(job)
-schedule.every().hour.do(job)
-schedule.every().day.at("10:30").do(job)
-schedule.every().monday.do(job)
-schedule.every().wednesday.at("13:15").do(job)
-"""
-# time.sleep(10)
-# schedule.run_all(delay_seconds=2)
-
-while True:
-    schedule.run_pending()
-    time.sleep(10)
+    while True:
+        schedule.run_pending()
+        time.sleep(10)

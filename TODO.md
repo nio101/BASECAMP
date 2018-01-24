@@ -3,7 +3,7 @@
 ===========
 
 nightwatch:
-- check batteries modules Muta >= 2.3V, sinon mesures pas fiables (luminosité par ex.)
+- check batteries modules Muta >= 2V, sinon warning pour recharger?
 - check age des mesures Muta => relancer operator + alerte
 
 TODO0:
