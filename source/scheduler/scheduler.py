@@ -60,6 +60,7 @@ def one_of(m_list):
 
 def job(h, m):
     # choose an announcement
+    tools.log.debug("announcing time: "+h+":"+m)
     if (datetime.datetime.today().weekday() >= 5):  # weekend
         m_announce = one_of(announcements_time_weekend)
     else:
@@ -68,7 +69,14 @@ def job(h, m):
         m_time = h+"h"
     else:
         m_time = h+"h"+m
-    requests.get(interphone_url, params={'service': tools.service_name, 'announce': m_announce.format(m_time)}, timeout=interphone_timeout)
+    tools.log.debug("announcing time: "+m_announce.format(m_time))
+    try:
+        requests.get(interphone_url, params={'service': tools.service_name, 'announce': m_announce.format(m_time)}, timeout=interphone_timeout)
+    except Exception as e:
+        tools.log.error(e.__str__())
+        tools.log.error("*** ERROR reaching interphone on "+str(interphone_url)+" ***")
+        tools.notify("ERROR", "*** ERROR reaching interphone on "+str(interphone_url)+" ***")
+    return
 
 
 # =======================================================
@@ -87,6 +95,7 @@ if __name__ == "__main__":
     hello_world = eval(tools.config.get('announcements', 'hello_world'))
     announcements_time_week = eval(tools.config.get('announcements', 'announcements_time_week'))
     announcements_time_weekend = eval(tools.config.get('announcements', 'announcements_time_weekend'))
+    hour_marks = eval(tools.config.get('announcements', 'hour_marks'))
 
     # startup sync & notification
     tools.log.info("--= Restarting =--")
@@ -101,8 +110,6 @@ if __name__ == "__main__":
     # announce only between 7h00-22h30
     for hour in range(7, 23):
         hours.append('{0:01d}'.format(hour))
-    # hour_marks = ["00", "15", "30", "45"]
-    hour_marks = ["00", "30"]
     for hour in hours:
         for mn in hour_marks:
             schedule.every().day.at(hour+":"+mn).do(job, hour, mn)

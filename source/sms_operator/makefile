@@ -20,6 +20,9 @@ remote_copy:
 	ssh bc-watch "sudo rm -rf ~/sms_operator"
 	cd ..; scp -r sms_operator bc-watch:~/
 
+clean:
+	rm *.log
+
 deploy: version stop remote_copy start
 	@/bin/echo -e "\x1B[01;93m -= done! =- \x1B[0m"
 

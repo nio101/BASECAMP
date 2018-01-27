@@ -114,5 +114,5 @@ if __name__ == "__main__":
         service_TS[key] = datetime.datetime.now()
         service_version[key] = "???"
     tools.notify("WARNING", tools.service_version+" - (re)started!")
-    # alive_check()
+    review_alive_checks()
     run(host=tools.hostname, port=tools.port, server='gevent')

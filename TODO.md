@@ -2,9 +2,19 @@
 
 ===========
 
+TODO:
+refaire pages grafana + backup dans git! dumbass!
+faire une page avec le status des modules + les logs!
+nightwatch => écrire dans influxdb quand un module pinge!
+ou alors... les modules ping alive dans influxdb et nightwatch va lire ces infos?
+Est-ce mieux ou pas que vers nightwatch?
+Oui, ce serait mieux... on va faire ca!
+=> fonction ping dans basecamp qui permet à chaque appli de faire un alive dans influxdb
+
 nightwatch:
 - check batteries modules Muta >= 2V, sinon warning pour recharger?
 - check age des mesures Muta => relancer operator + alerte
+- piles noires + recharger all
 
 TODO0:
 mettre les noms de service et de host dans des variables make!
