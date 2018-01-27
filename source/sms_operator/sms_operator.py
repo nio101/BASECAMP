@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python2
 # coding: utf-8
 
 """
@@ -6,7 +6,10 @@ sms_operator
 
 dependencies: GSM modem with SIM card + gammu + python-gammu, logbook
 
-(python3 compatible)
+! should be python3 compatible, but the service frequently looses connectivity with the modem !
+
+That doesn't seem to happen with python2, so let's stick to python2.x version.
+
 """
 
 

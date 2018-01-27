@@ -11,6 +11,9 @@ Est-ce mieux ou pas que vers nightwatch?
 Oui, ce serait mieux... on va faire ca!
 => fonction ping dans basecamp qui permet à chaque appli de faire un alive dans influxdb
 
+faire une page sur l'UI qui sorte l'état de chaque service (via grafana), les derniers évènements (via grafana), et donne les liens
+vers le logbook, et les pages de status supervisord
+
 nightwatch:
 - check batteries modules Muta >= 2V, sinon warning pour recharger?
 - check age des mesures Muta => relancer operator + alerte

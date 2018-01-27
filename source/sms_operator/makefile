@@ -7,11 +7,11 @@ version:
 	@cat _version_.txt
 
 stop:
-	@/bin/echo -e "\x1B[01;93m -= locking dependencies to requirements.txt =- \x1B[0m"
+	@/bin/echo -e "\x1B[01;93m -= stopping the service =- \x1B[0m"
 	ssh bc-watch sudo supervisorctl stop sms_operator
 
 start:
-	@/bin/echo -e "\x1B[01;93m -= locking dependencies to requirements.txt =- \x1B[0m"
+	@/bin/echo -e "\x1B[01;93m -= starting the service =- \x1B[0m"
 	ssh bc-watch sudo supervisorctl start sms_operator
 
 
