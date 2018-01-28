@@ -3,6 +3,9 @@
 ===========
 
 TODO:
+- les erreurs de sms_operator doivent être transmises à pushover_operator!
+
+TODO:
 refaire pages grafana + backup dans git! dumbass!
 faire une page avec le status des modules + les logs!
 nightwatch => écrire dans influxdb quand un module pinge!

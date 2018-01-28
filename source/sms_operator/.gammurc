@@ -36,10 +36,12 @@
 [gammu]
 
 port = /dev/ttyUSB0
-model = 
-connection = at115200
+model =
+# because going faster would make the whole thing unstable
+#connection = at115200
+connection = at14400
 synchronizetime = yes
 logfile = /home/nio/sms_operator/gammu.log
 logformat = nothing
-use_locking = no
-gammuloc = 
+use_locking = yes
+gammuloc =
