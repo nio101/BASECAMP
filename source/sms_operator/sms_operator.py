@@ -210,7 +210,7 @@ def check_incoming_SMS():
                 consecutive_check_failures = 0
         else:
             last_try_OK = False
-    t = Timer(10.0, check_incoming_SMS)
+    t = Timer(20.0, check_incoming_SMS)
     t.start()
 
 
@@ -219,6 +219,6 @@ def check_incoming_SMS():
 
 consecutive_check_failures = 0
 last_try_OK = True
-t = Timer(10.0, check_incoming_SMS)
+t = Timer(20.0, check_incoming_SMS)
 t.start()
 run(host=hostname, port=port)
