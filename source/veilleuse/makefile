@@ -28,7 +28,7 @@ remote_copy:
 	# cd ../..; scp _my_private_ini_files_/veilleuse.ini bc-veilleuse:~/veilleuse
 
 clean:
-	rm *.log
+	-rm *.log
 
 deploy: clean version stop remote_copy start
 	@/bin/echo -e "\x1B[01;93m -= done! =- \x1B[0m"

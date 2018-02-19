@@ -51,6 +51,7 @@ thresh_high = th_config.getint('main', 'thresh_high')
 influxdb_query_url = th_config.get('main', 'influxdb_query_url')
 interphone_url = th_config.get('main', 'interphone_url')
 wait_at_startup = th_config.getint('main', 'wait_at_startup')
+unit = th_config.get('main', 'unit')
 # also: getfloat, getint, getboolean
 
 # log
@@ -98,7 +99,7 @@ send_to_logbook("WARNING", "Restarting...")
 while True:
     # process/evaluate the last light outdoor value every 5mn
     try:
-        payload = {'db': "basecamp", 'q': "SELECT LAST(\"Lit\") FROM \"muta\" WHERE unit='jardin'"}
+        payload = {'db': "basecamp", 'q': "SELECT LAST(\"Lit\") FROM \"muta\" WHERE unit='"+unit+"'"}
         r = requests.get(influxdb_query_url, params=payload)
     except requests.exceptions.RequestException as e:
         log.error(e.__str__())
