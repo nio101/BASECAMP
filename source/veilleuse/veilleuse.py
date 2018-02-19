@@ -120,11 +120,13 @@ while True:
                 current_state = 1
             else:
                 log.info("lights are OFF")
+                """
                 send_to_logbook("INFO", "Extinction de la veilleuse de nuit.")
                 try:
                     requests.get(interphone_url, params={'service': service_name, 'announce': "Nico, le jour s'est levé... Bonne journée!"})
                 except:
                     send_to_logbook("ERROR", "Can't reach interphone on "+interphone_url)
+                """
                 current_state = 0
         elif (current_state == 0) and (light_value < thresh_low):
             # lights should be ON
@@ -136,10 +138,12 @@ while True:
             if GPIO.input(probe):
                 log.info("lights are ON")
                 send_to_logbook("INFO", "Allumage de la veilleuse de nuit.")
+                """
                 try:
                     requests.get(interphone_url, params={'service': service_name, 'announce': "Nico, La nuit est tombée... Bonne soirée!"})
                 except:
                     send_to_logbook("ERROR", "Can't reach interphone on "+interphone_url)
+                """
                 current_state = 1
             else:
                 log.error("lights are OFF, but they shouldn't be!")
