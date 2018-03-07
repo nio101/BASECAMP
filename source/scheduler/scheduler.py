@@ -88,7 +88,6 @@ if __name__ == "__main__":
     tools.init_logs()
     # .ini
     startup_wait = tools.config.getint('startup', 'wait')
-    startup_wait = tools.config.getint('startup', 'wait')
     # also: getfloat, getint, getboolean
     interphone_url = tools.config.get('interphone', 'interphone_url')
     interphone_timeout = tools.config.getint('interphone', 'interphone_timeout')
@@ -107,12 +106,26 @@ if __name__ == "__main__":
     alive_check()
     # scheduler init
     hours = []
-    # announce only between 7h00-22h30
-    for hour in range(7, 23):
+    # during the week, announce between 7h-22h
+    for hour in range(7, 22):
         hours.append('{0:01d}'.format(hour))
     for hour in hours:
-        for mn in hour_marks:
-            schedule.every().day.at(hour+":"+mn).do(job, hour, mn)
+        for mn in hour_marks:        
+            #schedule.every().day.at(hour+":"+mn).do(job, hour, mn)
+            schedule.every().monday.at(hour+":"+mn).do(job, hour, mn)
+            schedule.every().tuesday.at(hour+":"+mn).do(job, hour, mn)
+            schedule.every().wednesday.at(hour+":"+mn).do(job, hour, mn)
+            schedule.every().thursday.at(hour+":"+mn).do(job, hour, mn)
+            schedule.every().friday.at(hour+":"+mn).do(job, hour, mn)
+    # during the weekend, announce between 9h-22h
+    for hour in range(9, 22):
+        hours.append('{0:01d}'.format(hour))
+    for hour in hours:
+        for mn in hour_marks:        
+            #schedule.every().day.at(hour+":"+mn).do(job, hour, mn)
+            schedule.every().saturday.at(hour+":"+mn).do(job, hour, mn)
+            schedule.every().sunday.at(hour+":"+mn).do(job, hour, mn)
+
     """
     schedule.every(10).seconds.do(job)
     schedule.every().hour.do(job)
