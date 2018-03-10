@@ -118,6 +118,7 @@ if __name__ == "__main__":
             schedule.every().thursday.at(hour+":"+mn).do(job, hour, mn)
             schedule.every().friday.at(hour+":"+mn).do(job, hour, mn)
     # during the weekend, announce between 9h-22h
+    hours = []
     for hour in range(9, 22):
         hours.append('{0:01d}'.format(hour))
     for hour in hours:
