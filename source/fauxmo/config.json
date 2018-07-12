@@ -1,0 +1,18 @@
+{
+    "FAUXMO": {
+        "ip_address": "auto"
+    },
+    "PLUGINS": {
+        "SimpleHTTPPlugin": {
+            "DEVICES": [
+                {
+                    "port": 12340,
+                    "on_cmd": "http://192.168.1.99:8083/turn_mellotron_on",
+                    "off_cmd": "http://192.168.1.99:8083/turn_mellotron_on",
+                    "method": "GET",
+                    "name": "mellotron"
+                }
+            ]
+        }
+    }
+}
