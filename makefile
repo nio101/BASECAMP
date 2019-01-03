@@ -32,9 +32,9 @@ stop:
 	@/bin/echo -e "\x1B[01;93m -= stopping every service on every host using supervisord =- \x1B[0m"
 	@sleep 1
 	# stop the services
-	$(foreach host,$(hosts), ssh $(host) "sudo supervisorctl stop all";)
+	$(foreach host,$(hosts), ssh $(host) "sudo supervisorctl stop all || true";)
 	# stop also the docker containers on bc-hq
-	-$(foreach container,$(containers), ssh bc-hq "docker stop $(container) && docker rm $(container)";)
+	$(foreach container,$(containers), ssh bc-hq "docker stop $(container)  || true && docker rm $(container) || true";)
 
 start:
 	@/bin/echo -e "\x1B[01;93m -= starting the docker containers on bc-hq =- \x1B[0m"

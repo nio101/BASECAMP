@@ -7,10 +7,7 @@ scheduler service
 dependencies: logbook, interphone
 
 TODO:
-    + donner plus de vocabulaire aux annonces du scheduler / heure
-    + toutes les 30mn le matin quand je bosse, mais pas quand je suis en vacances (profil de chauffage sur semaine_vacances), ou bien le week-end!
-    + sinon toutes les heures, et le week-end et si vacances, pas avant 10h, et pas après 22h!
-    * toutes les 5mn, aller grabber une image du flux vidéo des carpes ! :)
+    * toutes les 5mn, aller grabber une image sur le net pour 
         - sera utilisé sur la page web d'accueil! :)
     + faire en sorte que scheduler puisse lire mon agenda et me rappeler les trucs pour lesquels j'ai mis un TAG spécifique genre "BASECAMP-1d", et du coup, il me rappelle le RV la veille au soir, à mon retour (ou par SMS, ou les deux). Ou bien "BASECAMP-3h" et il me rappelle le RV 3h avant... :)
         + mettre le calendrier des poubelles! :)
@@ -58,7 +55,27 @@ def one_of(m_list):
 # =======================================================
 # time announce job
 
+def update_holidays_flag():
+    # are we on holidays?
+    global holidays_flag
+    try:
+        r = requests.get(status_url, timeout=20)
+    except Exception as e:
+        tools.log.error(e.__str__())
+        tools.log.error("*** ERROR reaching status_url on "+str(status_url)+" ***")
+        tools.notify("ERROR", "*** ERROR reaching status_url on "+str(status_url)+" ***")
+    if r.json()[status_field] == status_value:
+        holidays_flag = True
+    else:
+        holidays_flag = False
+
+
+# =======================================================
+# time announce job
+
 def job(h, m):
+    # are we on holidays?
+    global holidays_flag
     # choose an announcement
     tools.log.debug("announcing time: "+h+":"+m)
     if (datetime.datetime.today().weekday() >= 5):  # weekend
@@ -91,10 +108,26 @@ if __name__ == "__main__":
     # also: getfloat, getint, getboolean
     interphone_url = tools.config.get('interphone', 'interphone_url')
     interphone_timeout = tools.config.getint('interphone', 'interphone_timeout')
+
+    status_url = tools.config.get('holidays_flag', 'status_url')
+    status_field = tools.config.get('holidays_flag', 'status_field')
+    status_value = tools.config.get('holidays_flag', 'status_value')
+
     hello_world = eval(tools.config.get('announcements', 'hello_world'))
     announcements_time_week = eval(tools.config.get('announcements', 'announcements_time_week'))
     announcements_time_weekend = eval(tools.config.get('announcements', 'announcements_time_weekend'))
     hour_marks = eval(tools.config.get('announcements', 'hour_marks'))
+    monday_work = eval(tools.config.get('announcements', 'monday_work'))
+
+    print(monday_work)
+    print(type(monday_work))
+    for key in monday_work:
+        print(key, type(monday_work[key]))
+
+    update_holidays_flag()
+    print(holidays_flag)
+
+    exit(0)
 
     # startup sync & notification
     tools.log.info("--= Restarting =--")
@@ -106,11 +139,17 @@ if __name__ == "__main__":
     alive_check()
     # scheduler init
     hours = []
-    # during the week, announce between 7h-22h
-    for hour in range(7, 22):
+
+    # udpate the holiday flag everyday @6am
+    schedule.every().day.at("06:00").do(update_holidays_flag)
+
+# refactoring needed
+
+    # during the week, announce between 6h-22h
+    for hour in range(6, 22):
         hours.append('{0:01d}'.format(hour))
     for hour in hours:
-        for mn in hour_marks:        
+        for mn in hour_marks:
             #schedule.every().day.at(hour+":"+mn).do(job, hour, mn)
             schedule.every().monday.at(hour+":"+mn).do(job, hour, mn)
             schedule.every().tuesday.at(hour+":"+mn).do(job, hour, mn)
@@ -122,7 +161,7 @@ if __name__ == "__main__":
     for hour in range(9, 22):
         hours.append('{0:01d}'.format(hour))
     for hour in hours:
-        for mn in hour_marks:        
+        for mn in hour_marks:
             #schedule.every().day.at(hour+":"+mn).do(job, hour, mn)
             schedule.every().saturday.at(hour+":"+mn).do(job, hour, mn)
             schedule.every().sunday.at(hour+":"+mn).do(job, hour, mn)
