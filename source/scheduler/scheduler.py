@@ -55,6 +55,7 @@ def one_of(m_list):
 # =======================================================
 # time announce job
 
+
 def update_holidays_flag():
     # are we on holidays?
     global holidays_flag
@@ -73,26 +74,40 @@ def update_holidays_flag():
 # =======================================================
 # time announce job
 
-def job(h, m):
+def job(h, m, normal_day, holiday_day):
     # are we on holidays?
     global holidays_flag
-    # choose an announcement
-    tools.log.debug("announcing time: "+h+":"+m)
-    if (datetime.datetime.today().weekday() >= 5):  # weekend
-        m_announce = one_of(announcements_time_weekend)
+    if holidays_flag:
+        day_config = holiday_day
     else:
-        m_announce = one_of(announcements_time_week)
-    if (m == "00"):
-        m_time = h+"h"
+        day_config = normal_day
+
+    now = datetime.datetime.today()
+    now = now.replace(hour=int(h), minute=int(m))
+    res = False
+    for _slice in day_config:
+        beg = now.replace(hour=int(_slice[0:2]), minute=int(_slice[3:5]))
+        end = now.replace(hour=int(_slice[6:8]), minute=int(_slice[9:11]))
+        if ((now >= beg) and (now < end)):
+            res = True
+            break
+    if res is True:
+        print()
+        # choose an announcement
+        m_announce = one_of(day_config[_slice])
+        if (m == "00"):
+            m_time = h+"h"
+        else:
+            m_time = h+"h"+m
+        tools.log.debug("announcing time: "+m_announce.format(m_time))
+        try:
+            requests.get(interphone_url, params={'service': tools.service_name, 'announce': m_announce.format(m_time)}, timeout=interphone_timeout)
+        except Exception as e:
+            tools.log.error(e.__str__())
+            tools.log.error("*** ERROR reaching interphone on "+str(interphone_url)+" ***")
+            tools.notify("ERROR", "*** ERROR reaching interphone on "+str(interphone_url)+" ***")
     else:
-        m_time = h+"h"+m
-    tools.log.debug("announcing time: "+m_announce.format(m_time))
-    try:
-        requests.get(interphone_url, params={'service': tools.service_name, 'announce': m_announce.format(m_time)}, timeout=interphone_timeout)
-    except Exception as e:
-        tools.log.error(e.__str__())
-        tools.log.error("*** ERROR reaching interphone on "+str(interphone_url)+" ***")
-        tools.notify("ERROR", "*** ERROR reaching interphone on "+str(interphone_url)+" ***")
+        print("(not inside any timeframe)")
     return
 
 
@@ -114,10 +129,18 @@ if __name__ == "__main__":
     status_value = tools.config.get('holidays_flag', 'status_value')
 
     hello_world = eval(tools.config.get('announcements', 'hello_world'))
-    announcements_time_week = eval(tools.config.get('announcements', 'announcements_time_week'))
-    announcements_time_weekend = eval(tools.config.get('announcements', 'announcements_time_weekend'))
+    # announcements_time_week = eval(tools.config.get('announcements', 'announcements_time_week'))
+    # announcements_time_weekend = eval(tools.config.get('announcements', 'announcements_time_weekend'))
     hour_marks = eval(tools.config.get('announcements', 'hour_marks'))
+
     monday_work = eval(tools.config.get('announcements', 'monday_work'))
+    tuesday_work = eval(tools.config.get('announcements', 'tuesday_work'))
+    wednesday_work = eval(tools.config.get('announcements', 'wednesday_work'))
+    thursday_work = eval(tools.config.get('announcements', 'thursday_work'))
+    friday_work = eval(tools.config.get('announcements', 'friday_work'))
+    saturday = eval(tools.config.get('announcements', 'saturday'))
+    sunday = eval(tools.config.get('announcements', 'sunday'))
+    anyday_holiday = eval(tools.config.get('announcements', 'anyday_holiday'))
 
     print(monday_work)
     print(type(monday_work))
@@ -125,9 +148,6 @@ if __name__ == "__main__":
         print(key, type(monday_work[key]))
 
     update_holidays_flag()
-    print(holidays_flag)
-
-    exit(0)
 
     # startup sync & notification
     tools.log.info("--= Restarting =--")
@@ -140,10 +160,12 @@ if __name__ == "__main__":
     # scheduler init
     hours = []
 
-    # udpate the holiday flag everyday @6am
-    schedule.every().day.at("06:00").do(update_holidays_flag)
+    # udpate the holiday flag everyday @5am
+    schedule.every().day.at("05:00").do(update_holidays_flag)
 
-# refactoring needed
+    # debug
+    # job("09", "45", monday_work, anyday_holiday)
+    # exit(0)
 
     # during the week, announce between 6h-22h
     for hour in range(6, 22):
@@ -151,11 +173,11 @@ if __name__ == "__main__":
     for hour in hours:
         for mn in hour_marks:
             #schedule.every().day.at(hour+":"+mn).do(job, hour, mn)
-            schedule.every().monday.at(hour+":"+mn).do(job, hour, mn)
-            schedule.every().tuesday.at(hour+":"+mn).do(job, hour, mn)
-            schedule.every().wednesday.at(hour+":"+mn).do(job, hour, mn)
-            schedule.every().thursday.at(hour+":"+mn).do(job, hour, mn)
-            schedule.every().friday.at(hour+":"+mn).do(job, hour, mn)
+            schedule.every().monday.at(hour+":"+mn).do(job, hour, mn, monday_work, anyday_holiday)
+            schedule.every().tuesday.at(hour+":"+mn).do(job, hour, mn, tuesday_work, anyday_holiday)
+            schedule.every().wednesday.at(hour+":"+mn).do(job, hour, mn, wednesday_work, anyday_holiday)
+            schedule.every().thursday.at(hour+":"+mn).do(job, hour, mn, thursday_work, anyday_holiday)
+            schedule.every().friday.at(hour+":"+mn).do(job, hour, mn, friday_work, anyday_holiday)
     # during the weekend, announce between 9h-22h
     hours = []
     for hour in range(9, 22):
@@ -163,8 +185,8 @@ if __name__ == "__main__":
     for hour in hours:
         for mn in hour_marks:
             #schedule.every().day.at(hour+":"+mn).do(job, hour, mn)
-            schedule.every().saturday.at(hour+":"+mn).do(job, hour, mn)
-            schedule.every().sunday.at(hour+":"+mn).do(job, hour, mn)
+            schedule.every().saturday.at(hour+":"+mn).do(job, hour, mn, saturday, anyday_holiday)
+            schedule.every().sunday.at(hour+":"+mn).do(job, hour, mn, sunday, anyday_holiday)
 
     """
     schedule.every(10).seconds.do(job)

@@ -307,16 +307,16 @@ def check_temp_update():
         log.info("aimed_temp=%.2f, relay=%i" % (aimed_temp, relay_out))
 
         should_stop = float(temp_in) >= (aimed_temp+float(delta_temp_plus)) and (relay_out == 1)
-        should_stop_bis = float(sec_temp_in) >= max_temp and (relay_out == 1)
+        #should_stop_bis = float(sec_temp_in) >= max_temp and (relay_out == 1)
         should_start = float(temp_in) <= (aimed_temp-float(delta_temp_minus)) and (relay_out == 0)
-        should_start_bis = float(sec_temp_in) < max_temp
+        #should_start_bis = float(sec_temp_in) < max_temp
         # hystheresis
         if should_stop or should_stop_bis:
             # stop the heater
             if should_stop:
                 log.info("Main sensor temp: %.2f. Goal reached (%.2f max, %.2f aimed), stopping the heater" % (float(temp_in), (aimed_temp+float(delta_temp_plus)), float(aimed_temp)))
-            if should_stop_bis:
-                log.info("Secondary sensor temp: %.2f. Maximum reached (%.2f max), stopping the heater" % (float(sec_temp_in), sec_temp_in))
+            #if should_stop_bis:
+            #    log.info("Secondary sensor temp: %.2f. Maximum reached (%.2f max), stopping the heater" % (float(sec_temp_in), sec_temp_in))
             # switch using GPIO + check with probe
             log.info("resetting the heater relay")
             GPIO.output(reset, 1)
@@ -336,7 +336,8 @@ def check_temp_update():
             # log.debug("sending (ORDERS): ozw_operator_heater_command, {'relais_chaudiere':'False'}")
             # msg = msgpack.packb(["ozw_operator_heater_command","{'relais_chaudiere':'False'}"])
             # socket_orders.send(msg)
-        elif should_start and should_start_bis:
+        # elif should_start and should_start_bis:
+        elif should_start:
             # start the heater
             log.info("Main sensor temp: %.2f. Low limit reached (%.2f min, %.2f aimed), starting the heater" % (float(temp_in), (float(aimed_temp)-float(delta_temp_minus)), float(aimed_temp)))
             # switch using GPIO + check with probe

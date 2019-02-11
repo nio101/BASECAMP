@@ -14,5 +14,11 @@ si base_profile == "semaine_vacances", alors on est en vacances, sinon on est au
 on peut faire un job générique qui prend en paramètre hour+mn+la liste des templates en cas de vacances et en cas de boulot.
 si on est hors période (appel à 6h45 en vacances, qui commence à 9h30) alors on ne fait rien...
 
+## fonction calendrier/reminder
+
 + on peut ajouter un lien avec le calendrier outlook pour détecter les tags basecamp & jouer des reminders pour les poubelles par exemple... :)
 
+## fonction watchdog
+
+utiliser _schedule_ pour faire des checks régulier (chaque 1/4 d'heure par exemple)
+et envoyer des alarmes/notifs en cas de problème
