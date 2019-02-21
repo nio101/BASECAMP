@@ -75,9 +75,9 @@ scp_to_hosts: stop
 	@sleep 1
 	cd docker_stuff
 	# docker: grafana
-	scp docker_grafana/run_me.sh bc-hq:~/docker_grafana
+	scp -r docker_grafana bc-hq:~/
 	# docker: influxdb
-	scp docker_influxdb/run_me.sh bc-hq:~/docker_influxdb
+	scp -r docker_influxdb bc-hq:~/
 	# docker: nginx
 	ssh bc-hq "sudo rm -rf ~/docker_nginx"
 	scp -r docker_nginx bc-hq:~/

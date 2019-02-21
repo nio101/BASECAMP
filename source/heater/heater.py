@@ -311,7 +311,7 @@ def check_temp_update():
         should_start = float(temp_in) <= (aimed_temp-float(delta_temp_minus)) and (relay_out == 0)
         #should_start_bis = float(sec_temp_in) < max_temp
         # hystheresis
-        if should_stop or should_stop_bis:
+        if should_stop:
             # stop the heater
             if should_stop:
                 log.info("Main sensor temp: %.2f. Goal reached (%.2f max, %.2f aimed), stopping the heater" % (float(temp_in), (aimed_temp+float(delta_temp_plus)), float(aimed_temp)))
