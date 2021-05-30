@@ -13,7 +13,6 @@ for python3 (for python2, don't use the readline() str/ascii conversion)
 <insert open source licence here>
 """
 
-import CHIP_IO.GPIO as GPIO
 import logging
 import logging.handlers
 import configparser
@@ -24,9 +23,16 @@ from influxdb import InfluxDBClient
 import re
 import sys
 import socket
-import CHIP_IO.Utilities as UT
 import os
-UT.unexport_all()
+from threading import Timer
+
+
+# sudo apt-get -y install python3-rpi.gpio
+try:
+    import RPi.GPIO as GPIO
+except RuntimeError:
+    print("Error importing RPi.GPIO!  This is probably because you need superuser privileges.  You can achieve this by using 'sudo' to run your script")
+    exit(1)
 
 
 # =======================================================
@@ -39,6 +45,31 @@ def send_to_logbook(log_type, msg):
     except Exception as e:
         log.error(e.__str__())
         log.error("*** ERROR reaching logbook on "+str(logbook_url)+" ***")
+
+
+def export_metrics():
+    """
+    export the average values of metrics to influxdb
+    and resets the values
+    """
+    global liter_count
+    log.debug("... time to export metrics to influxdb!")
+    if (liter_count > 0):
+        log.info("liter_count = %i" % (liter_count))
+        influx_json_body[0]['time'] = datetime.datetime.utcnow().isoformat()
+        influx_json_body[0]['fields'] = {'water': liter_count}
+        log.info("writing to influxdb: "+str(influx_json_body))
+        try:
+            client.write_points(influx_json_body)
+        except Exception as e:
+            log.error(e.__str__())
+            log.error("Error reaching infludb on "+str(influxdb_host)+":"+str(influxdb_port))
+            send_to_logbook("ERROR", "Cannot write to InfluxDB!")
+        liter_count = 0
+    else:
+        log.warning("nothing to export.")
+    t = Timer(30.0, export_metrics)
+    t.start()
 
 
 # =======================================================
@@ -93,14 +124,24 @@ influx_json_body = [
 ]
 
 # OS: highest priority
-os.nice(-20)
+# os.nice(-20)
+
+# GPIO init
+GPIO.setmode(GPIO.BOARD)
 
 # GPIO
-probe = "CSID7"
-GPIO.setup(probe, GPIO.IN)
+# probe: pin #11, GPIO17
+
+probe = 11
+GPIO.setup(probe, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
 # =======================================================
 # main loop
+
+liter_count = 0
+
+t = Timer(30.0, export_metrics)
+t.start()
 
 while True:
     while not GPIO.input(probe):
@@ -109,12 +150,4 @@ while True:
         time.sleep(0.01)
     # an impulse has been detected
     log.info("1l impulse detected.")
-    influx_json_body[0]['time'] = datetime.datetime.utcnow().isoformat()
-    influx_json_body[0]['fields'] = {'water': 1}
-    log.info("writing to influxdb: "+str(influx_json_body))
-    try:
-        client.write_points(influx_json_body)
-    except Exception as e:
-        log.error(e.__str__())
-        log.error("Error reaching infludb on "+str(influxdb_host)+":"+str(influxdb_port))
-        send_to_logbook("ERROR", "Cannot write to InfluxDB!")
+    liter_count = liter_count + 1

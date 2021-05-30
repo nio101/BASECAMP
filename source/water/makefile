@@ -13,18 +13,18 @@ test:
 
 stop:
 	@/bin/echo -e "\x1B[01;93m -= stopping the service =- \x1B[0m"
-	ssh bc-water sudo supervisorctl stop water
+	ssh bc-power sudo supervisorctl stop water
 
 start:
 	@/bin/echo -e "\x1B[01;93m -= starting the service =- \x1B[0m"
-	ssh bc-water sudo supervisorctl start water
+	ssh bc-power sudo supervisorctl start water
 
 remote_copy:
 	@/bin/echo -e "\x1B[01;93m -= copying to remote machine =- \x1B[0m"
-	ssh bc-water "sudo rm -rf ~/water"
-	ssh bc-water "sudo rm -rf ~/basecamp"
-	cd ..; scp -r water bc-water:~/
-	cd ..; scp -r basecamp bc-water:~/
+	ssh bc-power "sudo rm -rf ~/water"
+	ssh bc-power "sudo rm -rf ~/basecamp"
+	cd ..; scp -r water bc-power:~/
+	cd ..; scp -r basecamp bc-power:~/
 	# cd ../..; scp _my_private_ini_files_/scheduler.ini bc-hq:~/scheduler
 
 clean:
