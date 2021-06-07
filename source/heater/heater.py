@@ -181,6 +181,7 @@ def determine_sensors():
     res = False
     now = datetime.datetime.today()
     for _slice in main_sensor_calendar:
+        print(_slice)
         beg = now.replace(hour=int(_slice[0:2]), minute=int(_slice[3:5]))
         end = now.replace(hour=int(_slice[6:8]), minute=int(_slice[9:11]))
         if ((now >= beg) and (now < end)):
@@ -201,6 +202,7 @@ def is_calendar_on_eco(calendar):
     now = datetime.datetime.today()
     time_slices = calendar[now.weekday()]
     for _slice in time_slices:
+        print(_slice)
         beg = now.replace(hour=int(_slice[0:2]), minute=int(_slice[3:5]))
         end = now.replace(hour=int(_slice[6:8]), minute=int(_slice[9:11]))
         if ((now >= beg) and (now < end)):
