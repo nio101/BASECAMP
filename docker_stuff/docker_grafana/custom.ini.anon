@@ -2,8 +2,8 @@
 [smtp]
 enabled = true
 host = smtp.gmail.com:587
-user = lordnio101@gmail.com
-password = “”“odxnuqdywkrxcbob”""
+user = email
+password = key/pass
 ;cert_file =
 ;key_file =
 ;skip_verify = false

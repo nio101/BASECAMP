@@ -8,3 +8,6 @@ _my_private_ini_files_/
 __pycache__/
 *.py[cod]
 *$py.class
+.gitsecret/keys/random_seed
+!*.secret
+docker_stuff/docker_grafana/custom.ini
